@@ -7,12 +7,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Bloque Maldito</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Bloque Maldito">
-
 <style>
 :root{--gold:#f5c542;--txt:#f3e9ff;--muted:#c4b2e0;--r0:#c3c8d2;--r1:#3a8dff;--r2:#b05cff;--r3:#f5c542;--brown:#3b2210}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -209,6 +203,9 @@ body.inmenu #hud,body.inmenu #tools{visibility:hidden}
 .nofr{font-size:10px;font-weight:700;color:var(--muted)}
 .stk{position:absolute;right:10px;top:38%;width:96px;z-index:7;pointer-events:none;filter:drop-shadow(0 6px 8px #000a);animation:stk 1.7s ease-out forwards}
 @keyframes stk{0%{transform:scale(0) rotate(-30deg);opacity:0}15%{transform:scale(1.2) rotate(8deg);opacity:1}25%{transform:scale(1) rotate(0)}80%{opacity:1}100%{transform:translateY(-30px);opacity:0}}
+.backbtn{position:absolute;left:10px;top:calc(10px + env(safe-area-inset-top));z-index:3;width:46px;height:46px;border-radius:50%;border:2px solid #f5c54299;background:linear-gradient(#5a3590,#2a1548);color:#ffe3a3;font-size:24px;font-weight:900;box-shadow:0 3px 0 #120624,0 4px 10px #0009;display:flex;align-items:center;justify-content:center;padding:0}
+.backbtn:active{transform:scale(.92)}
+.screen{position:relative}
 </style>
 </head>
 <body>
@@ -756,9 +753,27 @@ $('#pauseBtn').addEventListener('click',()=>{audioUnlock();if(!S||V.lock)return;
 
 // ---------- Pantallas ----------
 const ov=$('#ov');
-function show(html,cls){const m=(cls||'').includes('menu');const bgk=(cls||'').includes('shopbg')?'bg_tienda':(cls||'').includes('bossbg')?'bg_jefe':null;ov.style.backgroundImage=bgk?`linear-gradient(rgba(14,6,26,.3),rgba(14,6,26,.75) 42%,rgba(14,6,26,.9)),url("${AS[bgk]}")`:m?`linear-gradient(rgba(14,6,26,0) 45%,rgba(14,6,26,.35) 62%,rgba(14,6,26,.75)),url("${AS.bg_inicio}")`:'';ov.innerHTML=(m?MENU_DECO():'')+`<div class="screen ${cls||''}">${html}</div>`;ov.classList.add('on');ov.classList.toggle('menu',m);ov.scrollTop=0;hideTip()}
+let BACK=null,BACK0=null;
+const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+function AppPlugin(){try{return window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App}catch(e){return null}}
+function exitApp(){const a=AppPlugin();saveGame();if(a&&a.exitApp)a.exitApp();else{try{window.close()}catch(e){}}}
+function backBtn(){return'<button class="backbtn" data-a="back" aria-label="Atrás">←</button>'}
+function goBack(){audioUnlock();
+ if($('#tip').style.display==='flex'){hideTip();return}
+ if(V.target){V.target=null;renderTools();return}
+ if(V.lock)return;
+ if(ov.classList.contains('on')){if(BACK){SFX.click();BACK()}return}
+ if(S&&(S.phase==='play'||S.phase==='stuck')){SFX.click();showPause()}}
+// botón Atrás de Android: plugin App de Capacitor y, como respaldo, el historial del navegador
+(function(){const a=AppPlugin();if(a&&a.addListener){try{a.addListener('backButton',goBack)}catch(e){}}
+ else{try{history.pushState({bm:1},'');addEventListener('popstate',()=>{history.pushState({bm:1},'');goBack()})}catch(e){}}})();
+function show(html,cls){BACK=BACK0;BACK0=null;const m=(cls||'').includes('menu');const bgk=(cls||'').includes('shopbg')?'bg_tienda':(cls||'').includes('bossbg')?'bg_jefe':null;ov.style.backgroundImage=bgk?`linear-gradient(rgba(14,6,26,.3),rgba(14,6,26,.75) 42%,rgba(14,6,26,.9)),url("${AS[bgk]}")`:m?`linear-gradient(rgba(14,6,26,0) 45%,rgba(14,6,26,.35) 62%,rgba(14,6,26,.75)),url("${AS.bg_inicio}")`:'';ov.innerHTML=(m?MENU_DECO():'')+`<div class="screen ${cls||''}">${html}</div>`;ov.classList.add('on');ov.classList.toggle('menu',m);ov.scrollTop=0;hideTip()}
 function closeOv(){ov.classList.remove('on');ov.innerHTML=''}
 const A={};
+A.back=()=>{if(BACK)BACK()};
+A.exitq=()=>{show(`<h2>¿Salir del juego?</h2><div class="panel"><p>Tu run y tus récords quedan guardados.</p></div><button class="btn primary" data-a="exit">Salir</button><button class="btn" data-a="menu">Seguir jugando</button>`);BACK=showMenu};
+A.exit=()=>exitApp();
+
 ov.addEventListener('click',e=>{audioUnlock();const b=e.target.closest('[data-a]');if(!b||b.disabled)return;SFX.click();const f=A[b.dataset.a];if(f)f(b.dataset.v,b)});
 function gemRow(){const p=SKINS[SET.skin].pre;return[0,1,2,3,4,5,6].map(i=>`<img src="${AS[p+i]}" style="animation-delay:${i*0.15}s" alt="">`).join('')}
 function bi(icon,txt){return`<span class="bi">${img(icon)}${txt}</span>`}
@@ -773,14 +788,14 @@ function showMenu(){S=null;document.body.classList.add('inmenu');V.drag=null;V.t
  <button class="btn ${run?'':'primary'}" data-a="newrun">Nueva run</button>
  <button class="btn" data-a="zen">Clásico Zen${zen?'<small>continuar partida</small>':''}</button>
  <div class="row2"><button class="btn small" data-a="album">${bi('i_libro','Álbum')}</button><button class="btn small" data-a="settings">${bi('i_ajustes','Ajustes')}</button></div>
- <button class="btn small" data-a="help" style="max-width:200px">Cómo jugar</button>
- <div class="records">${img('i_estrella','width:16px;vertical-align:-3px')} Mejor run: <b>${fmt(BEST.run)}</b> · Acto máx.: <b>${BEST.act||'—'}</b> · Victorias: <b>${BEST.wins}</b><br>Récord Zen: <b>${fmt(BEST.zen)}</b></div>`,'menu')}
-A.newrun=()=>{if(LS.get('bm_run',null)){show(`<h2>¿Nueva run?</h2><div class="panel"><p>Tienes una run a medias. Si empiezas otra, se perderá.</p></div><button class="btn primary" data-a="newrun2">Empezar de cero</button><button class="btn" data-a="menu">Volver</button>`);return}A.newrun2()};
+ <div class="row2"><button class="btn small" data-a="help">Cómo jugar</button>${NATIVE?'<button class="btn small" data-a="exitq">Salir del juego</button>':''}</div>
+ <div class="records">${img('i_estrella','width:16px;vertical-align:-3px')} Mejor run: <b>${fmt(BEST.run)}</b> · Acto máx.: <b>${BEST.act||'—'}</b> · Victorias: <b>${BEST.wins}</b><br>Récord Zen: <b>${fmt(BEST.zen)}</b></div>`,'menu');BACK=NATIVE?A.exitq:null}
+A.newrun=()=>{if(LS.get('bm_run',null)){BACK0=showMenu;show(`<h2>¿Nueva run?</h2><div class="panel"><p>Tienes una run a medias. Si empiezas otra, se perderá.</p></div><button class="btn primary" data-a="newrun2">Empezar de cero</button><button class="btn" data-a="menu">Volver</button>`);return}A.newrun2()};
 A.newrun2=()=>{S=newRun((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.cont=()=>{const r=LS.get('bm_run',null);if(!r)return showMenu();S=r;enterGame()};
 A.zen=()=>{const z=LS.get('bm_zen',null);S=z||newZen((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.menu=()=>{saveGame();showMenu()};
-A.help=()=>show(`<h2>Cómo jugar</h2><div class="panel">
+A.help=()=>show(`${backBtn()}<h2>Cómo jugar</h2><div class="panel">
  <p>🧩 Arrastra las piezas al tablero. Completa una <b>fila o columna</b> para borrarla.</p>
  <p>🔵 Cada casilla da <b>fichas</b>; cada línea, +10. 🔴 El <b>Multi</b> es el nº de líneas borradas a la vez. Puntos = Fichas × Multi.</p>
  <p>🔥 <b>Combo:</b> si borras en turnos seguidos, +1 Multi por turno. Se rompe al colocar sin borrar.</p>
@@ -797,32 +812,34 @@ function boardsHTML(){return`<div class="sec">Tablero</div><div class="picks">${
 function bgsHTML(){return`<div class="sec">Fondo de la partida</div><div class="picks bgp">${Object.entries(BGS).map(([id,b])=>`<button class="pick ${SET.bg===id?'on':''}" data-a="setbg" data-v="${id}"><img src="${AS[b.img]}" alt=""><small>${b.n}</small></button>`).join('')}</div>`}
 A.board=v=>{SET.board=v;saveSet();loadImg(BOARDS[v].img).then(()=>{layout();SFX.card();A.settings()})};
 A.setbg=v=>{SET.bg=v;saveSet();applyBg();SFX.card();A.settings()};
-A.mascot=()=>show(`<h2>Disfraz de la mascota</h2><div class="avs mas">${MASCOTS.map(m=>`<button class="${SET.mascot===m?'on':''}" data-a="setmas" data-v="${m}">${img(m==='clasica'?'mascota_feliz':'ms_'+m)}</button>`).join('')}</div><button class="btn primary" data-a="settings">Listo</button>`,'top');
+A.mascot=()=>show(`${backBtn()}<h2>Disfraz de la mascota</h2><div class="avs mas">${MASCOTS.map(m=>`<button class="${SET.mascot===m?'on':''}" data-a="setmas" data-v="${m}">${img(m==='clasica'?'mascota_feliz':'ms_'+m)}</button>`).join('')}</div><button class="btn primary" data-a="settings">Listo</button>`,'top');
 A.setmas=v=>{SET.mascot=v;saveSet();SFX.card();A.mascot()};
-A.settings=()=>show(`<h2>Ajustes</h2>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
+A.settings=()=>show(`${backBtn()}<h2>Ajustes</h2>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
 A.togmusic=()=>{SET.music=!SET.music;saveSet();applyVol();S?showPause():A.settings()};
 A.togsfx=()=>{SET.sfx=!SET.sfx;saveSet();applyVol();S?showPause():A.settings()};
 A.skin=v=>{if(SKINS[v].locked){SFX.err();toast('Obsidiana llegará con la tienda de la v2');return}SET.skin=v;saveSet();loadSkin(v).then(()=>{SFX.card();A.settings()})};
-A.avatar=()=>show(`<h2>Elige tu avatar</h2><div class="avs">${AVATARS.map(a=>`<button class="${SET.avatar===a?'on':''}" data-a="setav" data-v="${a}">${img('av_'+a)}</button>`).join('')}</div><div class="sec">Marco del avatar</div><div class="avs frs">${FRAMES.map(f=>`<button class="${SET.frame===f?'on':''}" data-a="setfr" data-v="${f}">${f==='ninguno'?'<span class="nofr">Sin marco</span>':img('mc_'+f)}</button>`).join('')}</div><div class="row" style="justify-content:center">${avHTML(90)}</div><button class="btn primary" data-a="${S?'resume':'menu'}">Listo</button>`,'top');
+A.avatar=()=>show(`${backBtn()}<h2>Elige tu avatar</h2><div class="avs">${AVATARS.map(a=>`<button class="${SET.avatar===a?'on':''}" data-a="setav" data-v="${a}">${img('av_'+a)}</button>`).join('')}</div><div class="sec">Marco del avatar</div><div class="avs frs">${FRAMES.map(f=>`<button class="${SET.frame===f?'on':''}" data-a="setfr" data-v="${f}">${f==='ninguno'?'<span class="nofr">Sin marco</span>':img('mc_'+f)}</button>`).join('')}</div><div class="row" style="justify-content:center">${avHTML(90)}</div><button class="btn primary" data-a="${S?'resume':'menu'}">Listo</button>`,'top');
 A.setfr=v=>{SET.frame=v;saveSet();SFX.card();A.avatar()};
 A.setav=v=>{SET.avatar=v;saveSet();SFX.card();A.avatar()};
-A.wipe=()=>show(`<h2>¿Seguro?</h2><div class="panel"><p>Se borrarán los récords, el álbum y las partidas guardadas.</p></div><button class="btn primary" data-a="wipe2">Sí, borrar</button><button class="btn" data-a="settings">No</button>`);
+A.wipe=()=>{BACK0=A.settings;show(`<h2>¿Seguro?</h2><div class="panel"><p>Se borrarán los récords, el álbum y las partidas guardadas.</p></div><button class="btn primary" data-a="wipe2">Sí, borrar</button><button class="btn" data-a="settings">No</button>`)};
 A.wipe2=()=>{LS.del('bm_run');LS.del('bm_zen');BEST={run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]};saveBest();showMenu()};
 A.album=()=>{const ids=Object.keys(CURSES);const act=ids.filter(i=>!CURSES[i].off),seen=act.filter(i=>BEST.seenC.includes(i)).length;
  const order=[...act,...ids.filter(i=>CURSES[i].off)];
  const bossIds=['grieta','niebla','muro','rey','avaro','bruja','gigante','reloj','plaga'];
- show(`<h2>Álbum maldito</h2><div class="sec">Maldiciones <small>${seen}/${act.length} descubiertas · 15 más en la v2</small></div>
+ show(`${backBtn()}<h2>Álbum maldito</h2><div class="sec">Maldiciones <small>${seen}/${act.length} descubiertas · 15 más en la v2</small></div>
  <div class="grid">${order.map(id=>{const c=CURSES[id],s=BEST.seenC.includes(id);return`<div style="position:relative" data-a="ctip" data-v="${id}">${cardHTML(id,64,c.off?'soon':s?'':'lock')}${c.off?'<span class="badge">v2</span>':s?'':img('i_candado','position:absolute;inset:0;margin:auto;width:45%')}</div>`}).join('')}</div>
  <div class="sec">Jefes <small>${bossIds.filter(b=>BEST.seenB.includes(b)).length}/4 derrotados</small></div>
  <div class="mgrid">${bossIds.map(b=>{const B=BOSSES[b],s=BEST.seenB.includes(b);return`<div>${img(B.off?'mask_'+b:s?'mask_'+b:'mask_bloqueado',B.off?'filter:grayscale(1) brightness(.6)':'')}<b>${B.off||s?B.n:'???'}</b><span style="color:var(--muted)">${B.off?'v2':s?'Derrotado':'Por descubrir'}</span></div>`}).join('')}</div>
  <button class="btn primary" data-a="menu">Volver</button>`,'top')};
 A.ctip=(v,el)=>{const r=el.getBoundingClientRect(),a=$('#app').getBoundingClientRect();if(BEST.seenC.includes(v)||CURSES[v].off)showTipCurse(v,Math.min(r.bottom-a.top+6,a.height-150));else toast('Cómprala en una run para descubrirla')};
+const wrapBack=(k,t)=>{const f=A[k];A[k]=(...a)=>{const r=f(...a);BACK=t;return r}};
+wrapBack('help',()=>S?showPause():showMenu());wrapBack('settings',()=>S?showPause():showMenu());wrapBack('avatar',()=>S?showPause():showMenu());wrapBack('mascot',()=>A.settings());wrapBack('album',showMenu);
 function showPause(){show(`<h2>Pausa</h2><div class="nextinfo">${stageOf(S,S.ri)}${S.mode==='run'?' · '+fmt(S.total)+' pts en total':''}</div>
  <button class="btn primary" data-a="resume">Seguir jugando</button>${togHTML()}<button class="btn small" data-a="settings">${bi('i_ajustes','Ajustes y aspecto')}</button><button class="btn small" data-a="help">Cómo jugar</button>
  <button class="btn small" data-a="menu">Salir al menú (se guarda)</button>
- <button class="btn small" data-a="abandon">${S.mode==='run'?'Abandonar run':'Nueva partida Zen'}</button>`)}
+ <button class="btn small" data-a="abandon">${S.mode==='run'?'Abandonar run':'Nueva partida Zen'}</button>`);BACK=A.resume}
 A.resume=()=>{if(!S)return showMenu();if(['boss','summary','shop','victory'].includes(S.phase))return routePhase();closeOv();showTut()};
-A.abandon=()=>{if(S.mode==='zen'){LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame();return}
+A.abandon=()=>{BACK0=showPause;if(S.mode==='zen'){BACK0=null;LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame();return}
  show(`<h2>¿Abandonar?</h2><div class="panel"><p>La run terminará aquí y se guardará tu puntuación.</p></div><button class="btn primary" data-a="abandon2">Sí, abandonar</button><button class="btn" data-a="resume">No</button>`)};
 A.abandon2=()=>runOver();
 function enterGame(){document.body.classList.remove('inmenu');closeOv();$('#big').innerHTML='';V.beams=[];V.flash=0;V.parts=[];V.clears=[];V.pops=[];V.floats=[];V.fx=[];V.loseT=0;V.drag=null;V.target=null;V.lock=false;V.dealT=vt;
@@ -837,7 +854,7 @@ function showBoss(){const k=bossKey(S.rules);
  <div class="bossart">${img('fx_runas','').replace('<img','<img class="runes"')}${img('fx_humo').replace('<img','<img class="smoke"')}${img('mask_'+k).replace('<img','<img class="mask"')}</div><h2>${bossName(S.rules)}</h2>
  <div class="panel rules">${S.rules.map(r=>`<p>🎭 ${BOSSES[r].d}</p>`).join('')}</div>
  <div class="nextinfo">Objetivo: <b style="color:#fff">${fmt(S.target)}</b> · ${S.piecesLeft} piezas</div>
- <button class="btn primary" data-a="bossgo">¡Que empiece!</button>`,'bossbg');SFX.laugh();vib(60)}
+ <button class="btn primary" data-a="bossgo">¡Que empiece!</button><button class="btn small" data-a="menu" style="max-width:220px">Salir al menú</button>`,'bossbg');BACK=showPause;SFX.laugh();vib(60)}
 A.bossgo=()=>{S.phase='play';saveGame();closeOv();hud();bigText(bossName(S.rules).toUpperCase(),'#ff4a5a');afterPhase()};
 function roundWon(){if(S.phase==='won'){const r=reward(S);S.gold+=r.total;S.lastReward=r;S.phase='summary';
   const act=Math.min(3,Math.floor(S.ri/3)+1);if(act>BEST.act)BEST.act=act;
@@ -854,7 +871,9 @@ function showSummary(){const r=Object.assign({base:3,left:0,interest:0,saver:0,c
  ${r.saver?`<div class="line"><span>Ahorrador</span><b>+${r.saver}</b></div>`:''}
  <div class="line tot"><span>${img('i_monedas','width:30px;vertical-align:-8px')} Oro</span><b>${S.gold} (+${r.total})</b></div></div>
  ${S.rules.length?`<div class="nextinfo" style="color:#ffd35a">${img('sobre','width:34px;vertical-align:-8px')} Premio del jefe: en la tienda te espera un sobre gratis</div>`:''}
- <button class="btn primary" data-a="toshop">Ir a la tienda</button>`);SFX.coin()}
+ <button class="btn primary" data-a="toshop">Ir a la tienda</button>
+ <div class="row2"><button class="btn small" data-a="skipshop">Siguiente ronda ▶</button><button class="btn small" data-a="menu">Salir al menú</button></div>`);BACK=showMenu;SFX.coin()}
+A.skipshop=()=>{if(S.phase!=='shop')openShop(S);A.next()};
 A.toshop=()=>{if(S.phase!=='shop')openShop(S);saveGame();hud();showShop()};
 function shopCard(o,i,full){const c=CURSES[o.id];return`<div class="tcard ${o.sold?'sold':''}">${cardHTML(o.id,116)}<div class="rar" style="color:var(--r${c.r})">${RARITY[c.r]}</div><div class="ds">${c.d}</div>
  ${o.sold?'<button class="mini" disabled>Comprada</button>':`<button class="mini" data-a="buyc" data-v="${i}" ${S.gold<c.p||full?'disabled':''}>Comprar · <i class="coin"></i>${c.p}</button>`}</div>`}
@@ -876,7 +895,7 @@ function showShop(){const sh=S.shop,full=S.curses.length>=S.maxCurses;
  <div class="sec">Tus Maldiciones <small>se venden por la mitad</small></div>
  <div class="owned">${S.curses.length?S.curses.map((id,i)=>`<div>${cardHTML(id,62)}<button class="mini sell" data-a="sell" data-v="${i}">Vender +${Math.floor(CURSES[id].p/2)}</button></div>`).join(''):'<div class="nextinfo">Aún no tienes ninguna.</div>'}</div>
  <div class="nextinfo">${nxt}</div>
- <button class="btn green" data-a="next">Siguiente ronda ▶</button>`,'top shopbg')}
+ <button class="btn green" data-a="next">Siguiente ronda ▶</button><button class="btn small" data-a="menu" style="max-width:220px">Salir al menú</button>`,'top shopbg');BACK=showPause}
 function seeCurse(id){if(!BEST.seenC.includes(id)){BEST.seenC.push(id);saveBest()}}
 A.buyc=v=>{const id=S.shop.curses[+v]&&S.shop.curses[+v].id;if(buyCurse(S,+v)){SFX.card();SFX.coin();vib(15);seeCurse(id)}else SFX.err();saveGame();hud();showShop()};
 A.buyi=v=>{if(buyItem(S,+v))SFX.coin();else SFX.err();saveGame();hud();showShop()};
@@ -884,7 +903,7 @@ A.reroll=()=>{if(rerollShop(S)){SFX.card();flipNext=true}else SFX.err();saveGame
 A.pack=()=>{if(openPack(S))SFX.card();else SFX.err();saveGame();hud();showShop()};
 A.pick=v=>{choosePack(S,v);seeCurse(v);SFX.card();saveGame();hud();showShop()};
 A.skippack=()=>{S.shop.pack.opts=null;saveGame();showShop()};
-A.sell=v=>{const id=S.curses[+v];show(`<h2>¿Vender?</h2>${cardHTML(id,150)}<div class="nextinfo" style="max-width:260px">${CURSES[id].d}</div><button class="btn primary" data-a="sell2" data-v="${v}">Vender por ${Math.floor(CURSES[id].p/2)} oro</button><button class="btn" data-a="backshop">No</button>`)};
+A.sell=v=>{const id=S.curses[+v];BACK0=showShop;show(`<h2>¿Vender?</h2>${cardHTML(id,150)}<div class="nextinfo" style="max-width:260px">${CURSES[id].d}</div><button class="btn primary" data-a="sell2" data-v="${v}">Vender por ${Math.floor(CURSES[id].p/2)} oro</button><button class="btn" data-a="backshop">No</button>`)};
 A.sell2=v=>{sellCurse(S,+v);SFX.coin();saveGame();hud();showShop()};
 A.backshop=()=>showShop();
 A.next=()=>{nextRound(S);saveGame();if(S.phase==='victory')return showVictory();enterGame()};
@@ -897,7 +916,7 @@ function statsHTML(){const cu=Object.entries(S.stats.curseUse).sort((a,b)=>b[1]-
  <div class="line"><span>Líneas borradas</span><b>${S.stats.lines}</b></div>
  <div class="line"><span>Maldición más útil</span><b>${cu?CURSES[cu[0]].n+' ('+cu[1]+')':'—'}</b></div></div>`}
 function showVictory(){show(`${hero('mask_trofeo','fx_corazones')}<h2>¡Has derrotado al Rey Maldito!</h2>${statsHTML()}
- <button class="btn primary" data-a="endless">Modo infinito ∞</button><button class="btn" data-a="finish">Terminar la run</button>`);SFX.win()}
+ <button class="btn primary" data-a="endless">Modo infinito ∞</button><button class="btn" data-a="finish">Terminar la run</button>`);SFX.win();BACK=showMenu}
 function countWin(){if(!S.wonCounted){S.wonCounted=true;BEST.wins++;saveBest()}}
 A.endless=()=>{countWin();S.endless=true;startRound(S);saveGame();enterGame()};
 A.finish=()=>{countWin();runOver()};
@@ -905,9 +924,9 @@ function runOver(){if(S.phase!=='over'){S.phase='over';if(S.total>BEST.run)BEST.
  const rec=S.total>=BEST.run&&S.total>0;const[md,mn]=medalFor();
  show(`<div class="row" style="justify-content:center;gap:14px">${avHTML(70)}${img(md).replace('<img','<img class="medal"')}${img(S.wonCounted?mascotImg():'mascota_triste','height:110px')}</div>
  <h2>${S.wonCounted?'Run completada':'Fin de la run'}</h2><div class="nextinfo">${mn}</div>${rec?`<div class="bosslabel" style="color:#ffd35a">${img('i_estrella','width:18px;vertical-align:-3px')} Nuevo récord ${img('i_estrella','width:18px;vertical-align:-3px')}</div>`:''}${statsHTML()}
- <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="newrun2">Nueva run</button><button class="btn small" data-a="menu2">Menú</button>`)}
+ <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="newrun2">Nueva run</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 function zenOver(){S.phase='lost';saveGame();show(`${hero('mascota_triste')}<h2>Fin de la partida</h2><div class="panel"><div class="line"><span>Puntos</span><b style="color:#fff">${fmt(S.score)}</b></div><div class="line"><span>Récord Zen</span><b>${fmt(BEST.zen)}</b></div><div class="line"><span>Mejor jugada</span><b>${fmt(S.stats.bestPlay)}</b></div></div>
- <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="zenagain">Otra partida</button><button class="btn small" data-a="menu2">Menú</button>`)}
+ <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="zenagain">Otra partida</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 A.zenagain=()=>{LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.menu2=()=>showMenu();
 A.share=()=>{const t=S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos, llegué a ${stageOf(S,Math.min(S.ri,8))}. Mejor jugada: ${fmt(S.stats.bestPlay)}. ¿Me superas?`:`🟪 Bloque Maldito (Zen): ${fmt(S.score)} puntos. ¿Me superas?`;
@@ -920,6 +939,5 @@ $('#pimg').src=AS.i_reloj;applyBg();
 (function(){try{[['icon','image/png'],['apple-touch-icon','image/png']].forEach(([r,t])=>{const l=document.createElement('link');l.rel=r;l.type=t;l.href=AS.icono;document.head.appendChild(l)})}catch(e){}})();
 loadImages().then(()=>{layout();showMenu();requestAnimationFrame(loop)});
 </script>
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body>
 </html>
