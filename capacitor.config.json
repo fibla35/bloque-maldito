@@ -1,0 +1,6 @@
+{
+  "appId": "com.fibla.bloquemaldito",
+  "appName": "Bloque Maldito",
+  "webDir": "www",
+  "android": { "backgroundColor": "#160a26" }
+}

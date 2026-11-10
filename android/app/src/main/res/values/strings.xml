@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bloque Maldito</string>
+    <string name="title_activity_main">Bloque Maldito</string>
+    <string name="package_name">com.fibla.bloquemaldito</string>
+    <string name="custom_url_scheme">com.fibla.bloquemaldito</string>
+</resources>
