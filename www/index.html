@@ -15,7 +15,7 @@ body{display:flex;justify-content:center;background:#160a26 var(--a-fondo) cente
 img{-webkit-user-drag:none;user-drag:none}
 #fog{position:fixed;inset:-30%;pointer-events:none;z-index:0;opacity:.5;
  background:radial-gradient(closest-side at 30% 40%,rgba(150,90,220,.35),transparent),radial-gradient(closest-side at 70% 65%,rgba(90,60,180,.3),transparent),radial-gradient(closest-side at 50% 85%,rgba(170,110,230,.25),transparent);
- animation:drift 28s ease-in-out infinite alternate}
+ }
 @keyframes drift{from{transform:translate(-6%,-3%) scale(1)}to{transform:translate(6%,4%) scale(1.15)}}
 #app{position:relative;z-index:1;width:100%;max-width:520px;height:100%;display:flex;flex-direction:column;overflow:hidden}
 button{font-family:inherit;cursor:pointer;color:#fff}
@@ -72,7 +72,7 @@ button{font-family:inherit;cursor:pointer;color:#fff}
 .mini.sell{border-image-source:var(--a-btn_morado);font-size:11px}
 .mini .coin{width:15px;height:15px;vertical-align:-3px}
 /* ---------- pantallas ---------- */
-#ov{position:absolute;inset:0;z-index:20;display:none;background:rgba(14,6,26,.88);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);overflow-y:auto;overflow-x:hidden}
+#ov{position:absolute;inset:0;z-index:20;display:none;background:rgba(14,6,26,.88);overflow-y:auto;overflow-x:hidden}
 #ov.on{display:block;animation:fadein .2s}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 .screen{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom));text-align:center}
@@ -206,6 +206,11 @@ body.inmenu #hud,body.inmenu #tools{visibility:hidden}
 .backbtn{position:absolute;left:10px;top:calc(10px + env(safe-area-inset-top));z-index:3;width:46px;height:46px;border-radius:50%;border:2px solid #f5c54299;background:linear-gradient(#5a3590,#2a1548);color:#ffe3a3;font-size:24px;font-weight:900;box-shadow:0 3px 0 #120624,0 4px 10px #0009;display:flex;align-items:center;justify-content:center;padding:0}
 .backbtn:active{transform:scale(.92)}
 .screen{position:relative}
+/* modo ahorro: sin animaciones continuas */
+body.eco .tw,body.eco .mas,body.eco .logo .gems img,body.eco .bossart .runes,body.eco .hero .main,body.eco .hero .deco,body.eco #fog{animation:none!important}
+body.eco #fog{display:none}
+/* las animaciones de adorno se paran solas a los 20 s */
+.logo .gems img,.mdeco .mas,.mdeco .tw,.hero .main,.hero .deco,.bossart .runes{animation-iteration-count:8!important}
 </style>
 </head>
 <body>
@@ -422,7 +427,7 @@ const $=s=>document.querySelector(s);
 const fmt=n=>Math.round(n).toLocaleString('es-ES');
 const fmtM=m=>(Math.round(m*10)/10).toString().replace('.',',');
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-let SET=Object.assign({music:true,sfx:true,skin:'gemas',avatar:'gato',track:'adrenalina',board:'madera',bg:'carpa',mascot:'clasica',frame:'ninguno'},LS.get('bm_set',{}));
+let SET=Object.assign({eco:false,music:true,sfx:true,skin:'gemas',avatar:'gato',track:'adrenalina',board:'madera',bg:'carpa',mascot:'clasica',frame:'ninguno'},LS.get('bm_set',{}));
 let BEST=Object.assign({run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]},LS.get('bm_best',{}));
 let S=null;
 function saveBest(){LS.set('bm_best',BEST)}
@@ -463,12 +468,15 @@ function audioUnlock(){try{if(!AU.c){const C=window.AudioContext||window.webkitA
  AU.sfx=c.createGain();AU.sfx.gain.value=SET.sfx?0.9:0;AU.sfx.connect(comp);
  AU.mus=c.createGain();AU.mus.gain.value=SET.music?0.6:0;AU.mus.connect(comp);
  const len=c.sampleRate;const buf=c.createBuffer(1,len,c.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;AU.nb=buf;
- MUS.next=c.currentTime+0.2;setInterval(schedMusic,60)}
+ MUS.next=c.currentTime+0.2;setInterval(schedMusic,120);setInterval(audioIdle,1500)}
  if(AU.c.state==='suspended')AU.c.resume()}catch(e){}}
+let lastSfx=0;
+function audioIdle(){const c=AU.c;if(!c)return;const quiet=!SET.music||document.hidden||($('#ov').classList.contains('on')&&false);
+ if(!SET.music&&c.state==='running'&&performance.now()-lastSfx>2500){try{c.suspend()}catch(e){}}}
 function applyVol(){if(!AU.c)return;AU.sfx.gain.value=SET.sfx?0.9:0;AU.mus.gain.value=SET.music?0.6:0}
-function tone(f,d,type,v,w,slide,dest){const c=AU.c;if(!c||(!dest&&!SET.sfx))return;const t=c.currentTime+(w||0);const o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+function tone(f,d,type,v,w,slide,dest){const c=AU.c;if(c&&!dest){lastSfx=performance.now();if(c.state==='suspended'&&!document.hidden)try{c.resume()}catch(e){}}if(!c||(!dest&&!SET.sfx))return;const t=c.currentTime+(w||0);const o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(dest||AU.sfx);o.start(t);o.stop(t+d+0.05)}
-function noise(d,v,f,w,q,type,dest){const c=AU.c;if(!c||(!dest&&!SET.sfx))return;const t=c.currentTime+(w||0);const s=c.createBufferSource();s.buffer=AU.nb;const fl=c.createBiquadFilter();fl.type=type||'bandpass';fl.frequency.value=f;fl.Q.value=q||1;
+function noise(d,v,f,w,q,type,dest){const c=AU.c;if(c&&!dest){lastSfx=performance.now();if(c.state==='suspended'&&!document.hidden)try{c.resume()}catch(e){}}if(!c||(!dest&&!SET.sfx))return;const t=c.currentTime+(w||0);const s=c.createBufferSource();s.buffer=AU.nb;const fl=c.createBiquadFilter();fl.type=type||'bandpass';fl.frequency.value=f;fl.Q.value=q||1;
  const g=c.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+d);s.connect(fl);fl.connect(g);g.connect(dest||AU.sfx);s.start(t,Math.random()*0.5);s.stop(t+d+0.05)}
 const SFX={
  click(){tone(700,.05,'triangle',.07)},
@@ -515,7 +523,7 @@ function schedMusic(){const c=AU.c;if(!c||c.state!=='running'||!SET.music)return
  const tr=curTrack();if(tr!==MUS.tr){MUS.tr=tr;MUS.step=0;MUS.next=c.currentTime+0.06}
  if(MUS.next<c.currentTime)MUS.next=c.currentTime+0.05;
  const I=intensity(),T=TRACKS[tr];const bpm=T.bpm+(I===2&&tr!=='calma'?8:0);const s16=60/bpm/4;
- while(MUS.next<c.currentTime+0.3){const s=MUS.step,w=MUS.next-c.currentTime,bar=Math.floor(s/16),q=s%16;
+ while(MUS.next<c.currentTime+0.4){const s=MUS.step,w=MUS.next-c.currentTime,bar=Math.floor(s/16),q=s%16;
   if(tr==='adrenalina'){const ch=PROG_A[bar%4];
    if(q%4===0)kick(w,.5);if(I>=1&&q===14&&bar%2===1)kick(w,.35);
    if(q===4||q===12)snare(w,.2);if(I===2&&bar%4===3&&q>=12)snare(w,.09+.03*(q-12));
@@ -553,7 +561,7 @@ function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 const cv=$('#cv'),ctx=cv.getContext('2d');
 let DPR=1,W=0,H=0,G=null;
 const V={parts:[],clears:[],pops:[],floats:[],fx:[],beams:[],flash:0,shake:0,slowUntil:0,dealT:-9999,loseT:0,disp:0,goal:0,target:null,drag:null,lock:false};
-function layout(){const r=cv.getBoundingClientRect();if(r.width<10||r.height<10)return;DPR=Math.min(2,window.devicePixelRatio||1);W=r.width;H=r.height;
+function layout(){kick();const r=cv.getBoundingClientRect();if(r.width<10||r.height<10)return;DPR=Math.min(SET.eco?1.25:2,window.devicePixelRatio||1);W=r.width;H=r.height;
  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
  const n=S?S.n:8;const B=BOARDS[SET.board]||BOARDS.madera;const gw=B.x1-B.x0,gh=B.y1-B.y0;
  // la cuadrícula siempre es cuadrada: el marco se escala por separado en ancho y alto para encajar
@@ -568,17 +576,26 @@ function cellRect(r,c){return[G.bx+c*G.cell,G.by+r*G.cell]}
 function drawCell(col,x,y,s,scale,alpha){const im=spr(col);if(!im)return;const p=s*0.04;let w=s-2*p;if(scale&&scale!==1){const d=w*(scale-1)/2;x-=d;y-=d;w*=scale}
  if(alpha!==undefined)ctx.globalAlpha=alpha;ctx.drawImage(im,x+p,y+p,w,w);if(alpha!==undefined)ctx.globalAlpha=1}
 function glowCell(col,x,y,s,a){drawCell(col,x,y,s);ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=a;drawCell(col,x,y,s);ctx.restore()}
-function burst(x,y,col,k){const c=COLORS[col]||'#aaa';for(let i=0;i<k;i++){const a=Math.random()*Math.PI*2,sp=80+Math.random()*260;
+function burst(x,y,col,k){if(SET.eco)k=Math.ceil(k/2);const c=COLORS[col]||'#aaa';for(let i=0;i<k;i++){const a=Math.random()*Math.PI*2,sp=80+Math.random()*260;
  V.parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-120,life:0.5+Math.random()*0.5,t:0,col:Math.random()<.25?'#fff':c,s:2+Math.random()*4,rot:Math.random()*6})}
  if(Math.random()<.5)V.parts.push({x,y,vx:(Math.random()-.5)*120,vy:-60-Math.random()*120,life:.6,t:0,img:'fx_destello',s:10+Math.random()*12,rot:0})
  if(V.parts.length>500)V.parts.splice(0,V.parts.length-500)}
 // efecto de imagen: {k,x,y,s0,s1,dur,t0,rot,a, x1,y1}
-function fxImg(k,x,y,s0,s1,dur,opt){V.fx.push(Object.assign({k,x,y,s0,s1,dur,t0:vt,rot:0},opt||{}))}
-function floatText(txt,x,y,col,size,dur){V.floats.push({txt,x,y,col:col||'#fff',size:size||22,t0:vt,dur:dur||900})}
+function fxImg(k,x,y,s0,s1,dur,opt){kick();V.fx.push(Object.assign({k,x,y,s0,s1,dur,t0:vt,rot:0},opt||{}))}
+function floatText(txt,x,y,col,size,dur){kick();V.floats.push({txt,x,y,col:col||'#fff',size:size||22,t0:vt,dur:dur||900})}
 function ease(k){return 1-Math.pow(1-k,3)}
 function backOut(k){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2)}
-let last=0,vt=0;
-function loop(now){requestAnimationFrame(loop);const rdt=Math.min(0.05,(now-last)/1000||0);last=now;const ts=now<V.slowUntil?0.25:1;const dt=rdt*ts;vt+=dt*1000;
+let last=0,vt=0,RUN=false,IDLE=0,lastFrame=0;
+// Ahorro de batería: el lienzo solo se redibuja cuando hay algo moviéndose; en reposo no gasta nada
+function kick(){IDLE=0;if(!RUN&&!document.hidden){RUN=true;last=performance.now();requestAnimationFrame(loop)}}
+function busy(now){return !!(V.drag||V.target||V.clears.length||V.pops.length||V.parts.length||V.floats.length||V.fx.length||V.beams.length||V.flash>0.01||V.shake>0.4||Math.abs(V.goal-V.disp)>0.5||(vt-V.dealT)<700||(V.loseT&&vt-V.loseT<900))}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)kick()});
+['pointerdown','pointermove','pointerup','click'].forEach(e=>document.addEventListener(e,kick,{passive:true,capture:true}));
+function loop(now){
+ if(SET.eco&&now-lastFrame<31&&!V.drag){requestAnimationFrame(loop);return}lastFrame=now;
+ if(busy(now))IDLE=0;else IDLE++;
+ if(IDLE>3||document.hidden){RUN=false}else requestAnimationFrame(loop);
+ const rdt=Math.min(0.05,(now-last)/1000||0);last=now;const ts=now<V.slowUntil?0.25:1;const dt=rdt*ts;vt+=dt*1000;
  if(S){const d=V.goal-V.disp;if(Math.abs(d)>0.5){V.disp+=d*Math.min(1,rdt*7);if(Math.abs(V.goal-V.disp)<1)V.disp=V.goal;setScore()}}
  ctx.clearRect(0,0,W,H);if(!S||!G)return;
  ctx.save();if(V.shake>0.4){ctx.translate((Math.random()-.5)*V.shake,(Math.random()-.5)*V.shake);V.shake*=Math.pow(0.004,rdt)}else V.shake=0;
@@ -679,7 +696,7 @@ function doPlace(i,r,c){const before=S.score;const res=place(S,i,r,c);if(!res)re
  if(S.mode==='zen'&&S.score>BEST.zen){BEST.zen=S.score;saveBest()}
  runSequence(res,before,cx,cy);
  saveGame();hud();afterPhase()}
-function setBoxes(ch,mu){$('#chipsBox').textContent=fmt(ch);$('#multBox').textContent=fmtM(mu)}
+function setBoxes(ch,mu){kick();$('#chipsBox').textContent=fmt(ch);$('#multBox').textContent=fmtM(mu)}
 function pulse(el){el.classList.remove('dim');el.classList.add('pulse');setTimeout(()=>el.classList.remove('pulse'),90)}
 function runSequence(res,before,x,y){const g=++seqGen;V.goal=before;const cb=$('#chipsBox'),mb=$('#multBox');
  const fancy=res.nl>0||res.ev.length>1;const step=fancy?Math.max(70,150-res.ev.length*8):0;let i=0;
@@ -708,7 +725,7 @@ function afterPhase(){renderTools();
  const G0=S;
  if(S.phase==='won'){V.lock=true;setTimeout(()=>{if(S!==G0){V.lock=false;return}SFX.win();bigText('¡RONDA SUPERADA!','#4ade80');fxImg('fx_confeti',W/2,G.by+G.bs*0.4,G.bs*0.4,G.bs*1.1,1200);
    for(let k=0;k<40;k++)burst(G.bx+Math.random()*G.bs,G.by+Math.random()*G.bs*0.5,k%7,1);setTimeout(()=>{V.lock=false;if(S===G0&&S.phase==='won')roundWon()},1300)},650)}
- else if(S.phase==='lost'){V.lock=true;hideTut();setTimeout(()=>{if(S!==G0){V.lock=false;return}V.loseT=vt;SFX.lose();vib(120);bigText(S.lostWhy==='pieces'?'¡SIN PIEZAS!':'¡SIN HUECO!','#ff4a5a');sticker(Math.random()<.5?'pg_enfado':'pg_sorpresa');setTimeout(()=>{V.lock=false;if(S!==G0||S.phase!=='lost')return;S.mode==='run'?runOver():zenOver()},1600)},450)}
+ else if(S.phase==='lost'){V.lock=true;hideTut();setTimeout(()=>{if(S!==G0){V.lock=false;return}V.loseT=vt;kick();SFX.lose();vib(120);bigText(S.lostWhy==='pieces'?'¡SIN PIEZAS!':'¡SIN HUECO!','#ff4a5a');sticker(Math.random()<.5?'pg_enfado':'pg_sorpresa');setTimeout(()=>{V.lock=false;if(S!==G0||S.phase!=='lost')return;S.mode==='run'?runOver():zenOver()},1600)},450)}
  else if(S.phase==='stuck'){SFX.err();toast('¡Sin hueco! Usa un objeto o ríndete')}}
 function applyTarget(r,c){const t=V.target;const out=t.kind==='barrido'?sweepRow(S,r):hammer(S,r,c);
  if(!out){SFX.err();toast(t.kind==='barrido'?'Esa fila está vacía':'Elige una casilla con bloque');return}
@@ -720,7 +737,7 @@ function applyTarget(r,c){const t=V.target;const out=t.kind==='barrido'?sweepRow
 // ---------- HUD ----------
 function setScore(){$('#score').textContent=fmt(V.disp);if(S&&S.mode==='run')$('#bar').style.width=Math.min(100,V.disp/S.target*100)+'%'}
 function bossKey(rules){return rules.length>1?'rey':rules[0]}
-function hud(){if(!S)return;const run=S.mode==='run';document.body.classList.toggle('zen',!run);
+function hud(){kick();if(!S)return;const run=S.mode==='run';document.body.classList.toggle('zen',!run);
  $('#stage').innerHTML=(run&&S.rules.length?img('mask_'+bossKey(S.rules)):'')+stageOf(S,S.ri);
  $('#gold').textContent=S.gold;$('#tlabel').textContent=run?'Objetivo':'Récord';$('#target').textContent=fmt(run?S.target:BEST.zen);
  $('#pleft').textContent=S.piecesLeft;$('#pleft').style.color=run&&S.piecesLeft<=5?'#ff6d7a':'';renderCurses();renderTools()}
@@ -803,7 +820,7 @@ A.help=()=>show(`${backBtn()}<h2>Cómo jugar</h2><div class="panel">
  <p>🃏 Con el oro compra <b>Maldiciones</b> en la tienda: cambian las reglas y disparan la puntuación. Tócalas para ver qué hacen.</p>
  <p>🎭 La 3.ª ronda de cada acto es un <b>Jefe</b> con una regla maldita. Gana los 3 actos para vencer al Rey Maldito.</p></div>
  <button class="btn primary" data-a="${S?'resume':'menu'}">Entendido</button>`);
-function togHTML(){return`<div class="tog"><button class="btn small" data-a="togmusic">${bi('i_musica',SET.music?'Música':'<s>Música</s>')}</button><button class="btn small" data-a="togsfx">${bi(SET.sfx?'i_sonido':'i_silencio',SET.sfx?'Efectos':'<s>Efectos</s>')}</button></div>`}
+function togHTML(){return`<button class="btn small" data-a="togeco">🔋 Ahorro de batería: ${SET.eco?'Sí':'No'}<small>${SET.eco?'30 fps, menos efectos y sin animaciones de fondo':'Máxima calidad'}</small></button><div class="tog"><button class="btn small" data-a="togmusic">${bi('i_musica',SET.music?'Música':'<s>Música</s>')}</button><button class="btn small" data-a="togsfx">${bi(SET.sfx?'i_sonido':'i_silencio',SET.sfx?'Efectos':'<s>Efectos</s>')}</button></div>`}
 function skinsHTML(){return`<div class="sec">Aspecto de los bloques</div><div class="skins">${Object.entries(SKINS).map(([id,s])=>`<button class="skin ${SET.skin===id?'on':''} ${s.locked?'locked':''}" data-a="skin" data-v="${id}">
  <span class="sw">${[0,2,3,5,6].map(i=>img(s.pre+i)).join('')}</span><span style="flex:1">${s.n}<small>${s.d}</small></span>${s.locked?img('i_candado','width:30px'):SET.skin===id?'✔':''}</button>`).join('')}</div>`}
 function tracksHTML(){const ic={adrenalina:'🥁',retro:'👾',feria:'🎡',calma:'🎶'};return`<div class="sec">Música de la partida</div><div class="skins">${Object.entries(TRACKS).map(([id,t])=>`<button class="skin ${SET.track===id?'on':''}" data-a="track" data-v="${id}"><span style="font-size:26px;width:34px;text-align:center">${ic[id]}</span><span style="flex:1">${t.n}<small>${t.d}</small></span>${SET.track===id?'✔':''}</button>`).join('')}</div><div class="nextinfo">Al elegir una pista suena unos segundos. En el menú y la tienda suena la feria.</div>`}
@@ -815,6 +832,8 @@ A.setbg=v=>{SET.bg=v;saveSet();applyBg();SFX.card();A.settings()};
 A.mascot=()=>show(`${backBtn()}<h2>Disfraz de la mascota</h2><div class="avs mas">${MASCOTS.map(m=>`<button class="${SET.mascot===m?'on':''}" data-a="setmas" data-v="${m}">${img(m==='clasica'?'mascota_feliz':'ms_'+m)}</button>`).join('')}</div><button class="btn primary" data-a="settings">Listo</button>`,'top');
 A.setmas=v=>{SET.mascot=v;saveSet();SFX.card();A.mascot()};
 A.settings=()=>show(`${backBtn()}<h2>Ajustes</h2>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
+A.togeco=()=>{SET.eco=!SET.eco;saveSet();applyEco();layout();S&&!ov.classList.contains('on')?0:(S?showPause():A.settings())};
+function applyEco(){document.body.classList.toggle('eco',!!SET.eco)}
 A.togmusic=()=>{SET.music=!SET.music;saveSet();applyVol();S?showPause():A.settings()};
 A.togsfx=()=>{SET.sfx=!SET.sfx;saveSet();applyVol();S?showPause():A.settings()};
 A.skin=v=>{if(SKINS[v].locked){SFX.err();toast('Obsidiana llegará con la tienda de la v2');return}SET.skin=v;saveSet();loadSkin(v).then(()=>{SFX.card();A.settings()})};
@@ -935,9 +954,9 @@ A.share=()=>{const t=S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos
  copy()};
 
 // ---------- Arranque ----------
-$('#pimg').src=AS.i_reloj;applyBg();
+$('#pimg').src=AS.i_reloj;applyEco();applyBg();
 (function(){try{[['icon','image/png'],['apple-touch-icon','image/png']].forEach(([r,t])=>{const l=document.createElement('link');l.rel=r;l.type=t;l.href=AS.icono;document.head.appendChild(l)})}catch(e){}})();
-loadImages().then(()=>{layout();showMenu();requestAnimationFrame(loop)});
+loadImages().then(()=>{layout();showMenu();kick()});
 </script>
 </body>
 </html>
