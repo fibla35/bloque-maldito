@@ -329,7 +329,9 @@ function newRun(seed){
 function newZen(seed){const S={mode:'zen',seed,rs:seed|0,ri:0,gold:0,curses:[],items:[],maxCurses:0,maxItems:0,n:8,total:0,
  stats:{bestPlay:0,maxMult:0,lines:0,curseUse:{}},rules:[],pieces:[]};
  S.board=newBoard(8);S.score=0;S.target=0;S.piecesLeft=-1;S.combo=0;S.turn=0;S.phase='play';dealOffer(S);return S}
-function startRound(S){
+// Foto del inicio de la ronda: permite repetirla si se pierde (modo «Repetir la ronda»)
+function retryRound(S){const s=S.snap;if(!s)return false;S.gold=s.gold;S.curses=s.curses.slice();S.items=s.items.slice();S.total=s.total;S.retries=(S.retries||0)+1;startRound(S);return true}
+function startRound(S){S.snap={gold:S.gold,curses:S.curses.slice(),items:S.items.slice(),total:S.total};
  S.board=newBoard(S.n);S.score=0;S.target=targetFor(S.ri);
  S.rules=isBoss(S.ri)?(S.ri<9?S.bosses[Math.floor(S.ri/3)].slice():shuffle(S,BOSS_IDS).slice(0,1+rint(S,2))):[];
  S.piecesLeft=BASE_PIECES+(has(S,'paciencia')?3:0);
@@ -427,7 +429,7 @@ const $=s=>document.querySelector(s);
 const fmt=n=>Math.round(n).toLocaleString('es-ES');
 const fmtM=m=>(Math.round(m*10)/10).toString().replace('.',',');
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-let SET=Object.assign({eco:false,music:true,sfx:true,skin:'gemas',avatar:'gato',track:'adrenalina',board:'madera',bg:'carpa',mascot:'clasica',frame:'ninguno'},LS.get('bm_set',{}));
+let SET=Object.assign({retry:true,eco:false,music:true,sfx:true,skin:'gemas',avatar:'gato',track:'adrenalina',board:'madera',bg:'carpa',mascot:'clasica',frame:'ninguno'},LS.get('bm_set',{}));
 let BEST=Object.assign({run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]},LS.get('bm_best',{}));
 let S=null;
 function saveBest(){LS.set('bm_best',BEST)}
@@ -831,7 +833,7 @@ A.board=v=>{SET.board=v;saveSet();loadImg(BOARDS[v].img).then(()=>{layout();SFX.
 A.setbg=v=>{SET.bg=v;saveSet();applyBg();SFX.card();A.settings()};
 A.mascot=()=>show(`${backBtn()}<h2>Disfraz de la mascota</h2><div class="avs mas">${MASCOTS.map(m=>`<button class="${SET.mascot===m?'on':''}" data-a="setmas" data-v="${m}">${img(m==='clasica'?'mascota_feliz':'ms_'+m)}</button>`).join('')}</div><button class="btn primary" data-a="settings">Listo</button>`,'top');
 A.setmas=v=>{SET.mascot=v;saveSet();SFX.card();A.mascot()};
-A.settings=()=>show(`${backBtn()}<h2>Ajustes</h2>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
+A.settings=()=>show(`${backBtn()}<h2>Ajustes</h2><button class="btn small" data-a="togretry">Al perder: ${SET.retry?'Repetir la ronda':'Empezar de cero'}<small>${SET.retry?'Vuelves al inicio de la ronda perdida':'Modo clásico: la run termina'}</small></button>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
 A.togeco=()=>{SET.eco=!SET.eco;saveSet();applyEco();layout();S&&!ov.classList.contains('on')?0:(S?showPause():A.settings())};
 function applyEco(){document.body.classList.toggle('eco',!!SET.eco)}
 A.togmusic=()=>{SET.music=!SET.music;saveSet();applyVol();S?showPause():A.settings()};
@@ -860,7 +862,7 @@ function showPause(){show(`<h2>Pausa</h2><div class="nextinfo">${stageOf(S,S.ri)
 A.resume=()=>{if(!S)return showMenu();if(['boss','summary','shop','victory'].includes(S.phase))return routePhase();closeOv();showTut()};
 A.abandon=()=>{BACK0=showPause;if(S.mode==='zen'){BACK0=null;LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame();return}
  show(`<h2>¿Abandonar?</h2><div class="panel"><p>La run terminará aquí y se guardará tu puntuación.</p></div><button class="btn primary" data-a="abandon2">Sí, abandonar</button><button class="btn" data-a="resume">No</button>`)};
-A.abandon2=()=>runOver();
+A.abandon2=()=>runOver(true);
 function enterGame(){document.body.classList.remove('inmenu');closeOv();$('#big').innerHTML='';V.beams=[];V.flash=0;V.parts=[];V.clears=[];V.pops=[];V.floats=[];V.fx=[];V.loseT=0;V.drag=null;V.target=null;V.lock=false;V.dealT=vt;
  V.disp=V.goal=S.score||0;setBoxes(0,0);$('#chipsBox').classList.add('dim');$('#multBox').classList.add('dim');
  hud();setScore();requestAnimationFrame(()=>{layout();routePhase()})}
@@ -938,14 +940,25 @@ function showVictory(){show(`${hero('mask_trofeo','fx_corazones')}<h2>¡Has derr
  <button class="btn primary" data-a="endless">Modo infinito ∞</button><button class="btn" data-a="finish">Terminar la run</button>`);SFX.win();BACK=showMenu}
 function countWin(){if(!S.wonCounted){S.wonCounted=true;BEST.wins++;saveBest()}}
 A.endless=()=>{countWin();S.endless=true;startRound(S);saveGame();enterGame()};
-A.finish=()=>{countWin();runOver()};
-function runOver(){if(S.phase!=='over'){S.phase='over';if(S.total>BEST.run)BEST.run=S.total;saveBest();saveGame()}
+A.finish=()=>{countWin();runOver(true)};
+function runOver(force){
+ if(!force&&SET.retry&&S.mode==='run'&&S.phase==='lost'&&S.snap&&!S.wonCounted){return showRetry()}
+ if(S.phase!=='over'){S.phase='over';if(S.total>BEST.run)BEST.run=S.total;saveBest();saveGame()}
  const rec=S.total>=BEST.run&&S.total>0;const[md,mn]=medalFor();
  show(`<div class="row" style="justify-content:center;gap:14px">${avHTML(70)}${img(md).replace('<img','<img class="medal"')}${img(S.wonCounted?mascotImg():'mascota_triste','height:110px')}</div>
  <h2>${S.wonCounted?'Run completada':'Fin de la run'}</h2><div class="nextinfo">${mn}</div>${rec?`<div class="bosslabel" style="color:#ffd35a">${img('i_estrella','width:18px;vertical-align:-3px')} Nuevo récord ${img('i_estrella','width:18px;vertical-align:-3px')}</div>`:''}${statsHTML()}
  <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="newrun2">Nueva run</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 function zenOver(){S.phase='lost';saveGame();show(`${hero('mascota_triste')}<h2>Fin de la partida</h2><div class="panel"><div class="line"><span>Puntos</span><b style="color:#fff">${fmt(S.score)}</b></div><div class="line"><span>Récord Zen</span><b>${fmt(BEST.zen)}</b></div><div class="line"><span>Mejor jugada</span><b>${fmt(S.stats.bestPlay)}</b></div></div>
  <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="zenagain">Otra partida</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
+function showRetry(){const why=S.lostWhy==='pieces'?'Te quedaste sin piezas':'No cabía ninguna pieza';
+ show(`${hero('mascota_triste')}<h2>¡Ronda perdida!</h2><div class="nextinfo">${stageOf(S,S.ri)} · ${why} · ${fmt(S.score)} / ${fmt(S.target)} puntos</div>
+ <div class="panel"><p>${SET.retry?'Puedes repetir esta ronda desde el principio, con el oro, las Maldiciones y los objetos que tenías al empezarla.':'Estás en modo clásico: la run termina aquí. También puedes repetir la ronda esta vez.'}</p>${S.retries?`<p style="color:var(--muted)">Reintentos en esta run: ${S.retries}</p>`:''}</div>
+ <button class="btn ${SET.retry?'primary':''}" data-a="retry">🔄 Reintentar ronda</button>
+ <button class="btn ${SET.retry?'':'primary'}" data-a="endrun">Terminar la run</button>
+ <button class="btn small" data-a="menu" style="max-width:220px">Salir al menú</button>`);BACK=showMenu}
+A.retry=()=>{retryRound(S);saveGame();SFX.card();enterGame()};
+A.endrun=()=>runOver(true);
+A.togretry=()=>{SET.retry=!SET.retry;saveSet();SFX.click();A.settings()};
 A.zenagain=()=>{LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.menu2=()=>showMenu();
 A.share=()=>{const t=S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos, llegué a ${stageOf(S,Math.min(S.ri,8))}. Mejor jugada: ${fmt(S.stats.bestPlay)}. ¿Me superas?`:`🟪 Bloque Maldito (Zen): ${fmt(S.score)} puntos. ¿Me superas?`;
