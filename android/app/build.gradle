@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     signingConfigs {
-        debug {
+        bloque {
             storeFile file('bloque.keystore')
             storePassword 'bloquemaldito'
             keyAlias 'bloque'
@@ -15,8 +15,8 @@ android {
         applicationId "com.fibla.bloquemaldito"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 109
-        versionName "1.9"
+        versionCode 110
+        versionName "1.9.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -25,7 +25,12 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.bloque
+        }
         release {
+            signingConfig signingConfigs.bloque
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
