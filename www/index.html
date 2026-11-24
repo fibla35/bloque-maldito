@@ -167,6 +167,11 @@ h2{font-family:Georgia,serif;margin:4px 0;font-size:28px;color:#ffe3a3;text-shad
 #tut .hand{width:56px;filter:drop-shadow(0 4px 4px #000a)}
 #tut .bub{position:absolute;left:44px;top:-64px;width:150px;height:76px;background:var(--a-bocadillo) center/100% 100% no-repeat;color:var(--brown);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;padding:4px 12px 18px;text-align:center;line-height:1.15}
 body.zen .runonly{display:none!important}
+body.daily #pstat,body.rush #pstat{display:block!important}body.daily #curses{display:flex!important}
+body.rush #pleft.hurry{color:#ff4a5a!important;animation:hurry .5s ease-in-out infinite alternate}@keyframes hurry{from{transform:scale(1)}to{transform:scale(1.18)}}
+.mrow2{display:flex;gap:8px;width:100%;max-width:340px}.mrow2 .btn{flex:1;min-width:0;padding-left:6px;padding-right:6px}
+.lb{width:100%}.lb .line.me{background:rgba(255,211,90,.18);border-radius:8px}.lb .line span{display:flex;gap:6px;align-items:center}
+.dcards{display:flex;gap:10px;justify-content:center;margin:8px 0}.dcards .cslot{width:60px;height:90px}.dcur{font-size:13px;color:var(--muted);text-align:left;margin:4px 0}
 #tools:empty{padding:0 0 env(safe-area-inset-bottom)}
 #tools:not(:empty){min-height:60px}
 .grid .cimg{width:100%!important}
@@ -224,7 +229,7 @@ body.eco #fog{display:none}
   <div class="row stats">
    <div class="stat"><small id="tlabel">Objetivo</small><b id="target">0</b></div>
    <div class="stat big"><small>Puntos</small><b id="score">0</b><div class="bar runonly"><i id="bar"></i></div></div>
-   <div class="stat runonly"><small><img id="pimg" alt="">Piezas</small><b id="pleft">0</b></div>
+   <div class="stat runonly" id="pstat"><small><img id="pimg" alt=""><span id="plabel">Piezas</span></small><b id="pleft">0</b></div>
   </div>
   <div class="row playbox"><div class="chips dim out" id="chipsBox">0</div><span>×</span><div class="mult dim out" id="multBox">0</div></div>
   <div id="curses" class="runonly"></div>
@@ -316,7 +321,7 @@ let BASE_PIECES=30;
 function isBoss(ri){return ri%3===2}
 function targetFor(ri){return ri<9?TARGETS[ri]:Math.round(TARGETS[8]*Math.pow(2,ri-8))}
 function bossName(rules){return !rules||!rules.length?'':rules.length>1?'Rey Maldito':BOSSES[rules[0]].n}
-function stageOf(S,ri){if(S.mode!=='run')return'Clásico Zen';if(ri>=9)return'Infinito · Ronda '+(ri-8);return'Acto '+(Math.floor(ri/3)+1)+' · '+(isBoss(ri)?'Jefe':'Ronda '+(ri%3+1))}
+function stageOf(S,ri){if(S.mode==='rush')return'Contrarreloj';if(S.mode==='daily')return'Reto Diario · '+S.dayLabel;if(S.mode!=='run')return'Clásico Zen';if(ri>=9)return'Infinito · Ronda '+(ri-8);return'Acto '+(Math.floor(ri/3)+1)+' · '+(isBoss(ri)?'Jefe':'Ronda '+(ri%3+1))}
 function has(S,id){return S.curses.includes(id)}
 function firstSlot(S){return S.pieces.findIndex(Boolean)}
 function fog(S){return S.rules.includes('niebla')}
@@ -331,6 +336,28 @@ function newZen(seed){const S={mode:'zen',seed,rs:seed|0,ri:0,gold:0,curses:[],i
  S.board=newBoard(8);S.score=0;S.target=0;S.piecesLeft=-1;S.combo=0;S.turn=0;S.phase='play';dealOffer(S);return S}
 // Foto del inicio de la ronda: permite repetirla si se pierde (modo «Repetir la ronda»)
 function retryRound(S){const s=S.snap;if(!s)return false;S.gold=s.gold;S.curses=s.curses.slice();S.items=s.items.slice();S.total=s.total;S.retries=(S.retries||0)+1;startRound(S);return true}
+// ---------- Contrarreloj ----------
+const RUSH_TIME=60;
+function newRush(seed){const S=newZen(seed);S.mode='rush';S.time=RUSH_TIME;S.reshuffles=0;S.maxCombo=0;return S}
+// ---------- Reto Diario: misma partida para todos ese día ----------
+const DAILY_PIECES=40;
+const DAILY_CURSES=['brasa','ladrillo','columnista','filero','pequenin','gordo','esquinero','centro','diagonal','eco','cadena'];
+const GHOSTS=['Bruja Pepa','Conde Bloque','Calabacín','Momia Juana','Payaso Tito','Lobo Luis','Fantasma Rita','Duende Max','Vampi Lola','Esqueleto Pol','Gato Negro','Mago Merlín','Zombi Paco','Adivina Rosa'];
+function daySeed(day){let h=2166136261;for(const ch of 'bm-'+day){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h|0}
+function newDaily(day,label){const seed=daySeed(day);const S=newZen(seed);S.mode='daily';S.day=day;S.dayLabel=label||day;
+ const T={rs:seed^0x5bd1e995};S.curses=shuffle(T,DAILY_CURSES).slice(0,2);S.maxCurses=2;
+ S.rs=seed;S.board=newBoard(8);S.piecesLeft=DAILY_PIECES;dealOffer(S);return S}
+// Bot de los fantasmas: juega la misma partida; skill 0..1 = probabilidad de elegir la mejor jugada
+function ghostScore(day,skill,salt){const S=newDaily(day);const R={rs:daySeed(day)^salt};
+ for(let g=0;g<DAILY_PIECES+2&&S.phase==='play';g++){const mv=[];
+  for(let i=0;i<3;i++){const p=S.pieces[i];if(!p)continue;for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(canPlace(S.board,p.cells,r,c)){
+   const t={c:0};p.cells.forEach(([a,b])=>S.board[a+r][b+c]=t);const L=findLines(S),n=L.rows.length+L.cols.length+L.diags.length;
+   let holes=0;for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(!S.board[y][x]){let k=0;if(y==0||S.board[y-1][x])k++;if(y==7||S.board[y+1][x])k++;if(x==0||S.board[y][x-1])k++;if(x==7||S.board[y][x+1])k++;if(k>=4)holes++}
+   p.cells.forEach(([a,b])=>S.board[a+r][b+c]=null);mv.push({i,r,c,v:n*40-holes*8+p.cells.length})}}
+  if(!mv.length)break;mv.sort((a,b)=>b.v-a.v);const m=rnd(R)<skill?mv[0]:mv[Math.min(mv.length-1,Math.floor(rnd(R)*Math.min(mv.length,12)))];place(S,m.i,m.r,m.c)}
+ return S.score}
+function dailyGhosts(day){const T={rs:daySeed(day)^0x1234567};const names=shuffle(T,GHOSTS).slice(0,7);const sk=[0.05,0.2,0.35,0.5,0.65,0.8,0.95];
+ return names.map((n,k)=>({n,s:ghostScore(day,sk[k],k*7919+13)})).sort((a,b)=>b.s-a.s)}
 function startRound(S){S.snap={gold:S.gold,curses:S.curses.slice(),items:S.items.slice(),total:S.total};
  S.board=newBoard(S.n);S.score=0;S.target=targetFor(S.ri);
  S.rules=isBoss(S.ri)?(S.ri<9?S.bosses[Math.floor(S.ri/3)].slice():shuffle(S,BOSS_IDS).slice(0,1+rint(S,2))):[];
@@ -349,6 +376,12 @@ function pieceFits(S,p){if(fits(S.board,p.cells))return true;if(has(S,'rotor')){
 function available(S){if(fog(S)){const i=firstSlot(S);return i<0?[]:[S.pieces[i]]}return S.pieces.filter(Boolean)}
 function canRescue(S){return S.items.length>0||(has(S,'tijera')&&!S.tijeraUsed)}
 function evaluate(S){
+ if(S.mode==='rush'){if(S.time<=0){S.phase='lost';S.lostWhy='time';return}
+  let k=0;while(!available(S).some(p=>pieceFits(S,p))&&k<4){dealOffer(S);S.time=Math.max(0,S.time-5);S.reshuffles=(S.reshuffles||0)+1;k++}
+  if(S.time<=0){S.phase='lost';S.lostWhy='time';return}
+  S.phase=k<4?'play':'lost';if(S.phase==='lost')S.lostWhy='nofit';return}
+ if(S.mode==='daily'){if(S.piecesLeft===0){S.phase='lost';S.lostWhy='end';return}
+  if(!available(S).some(p=>pieceFits(S,p))){S.phase='lost';S.lostWhy='nofit'}else S.phase='play';return}
  if(S.mode==='run'&&S.score>=S.target){S.phase='won';return}
  if(S.mode==='run'&&S.piecesLeft===0){S.phase='lost';S.lostWhy='pieces';return}
  if(!available(S).some(p=>pieceFits(S,p))){if(S.mode==='run'&&canRescue(S)){S.phase='stuck';S.lostWhy='nofit'}else{S.phase='lost';S.lostWhy='nofit'}}
@@ -395,6 +428,8 @@ function place(S,slot,r0,c0){
  S.score+=pts;if(S.mode==='run')S.total+=pts;else S.total=S.score;
  if(pts>S.stats.bestPlay)S.stats.bestPlay=pts;if(mult>S.stats.maxMult)S.stats.maxMult=mult;S.stats.lines+=nl;
  clr.forEach(v=>S.board[v.r][v.c]=null);
+
+ let tBonus=0;if(S.mode==='rush'&&nl>0){tBonus=2*nl+(S.combo>1?S.combo-1:0)+(S.board.every(r=>r.every(x=>!x))?5:0);S.time=Math.min(99,S.time+tBonus)}
  let raised=false,wallClr=[],wallPts=0;
  if(S.rules.includes('muro')&&S.turn%4===0){raiseWall(S);raised=true;
   // al subir el muro puede completarse una columna: se borra y da puntos (10 fichas por línea × nº de líneas)
@@ -402,7 +437,7 @@ function place(S,slot,r0,c0){
   if(n2){const c2=lineCells(S,L2);wallClr=[...c2.values()];c2.forEach(v=>S.board[v.r][v.c]=null);wallPts=10*n2*n2;S.score+=wallPts;if(S.mode==='run')S.total+=wallPts;else S.total=S.score}}
  let dealt=false;if(S.pieces.every(p=>!p)){dealOffer(S);dealt=true}
  evaluate(S);
- return{cells,color:pc.color,sz,cleared:[...clr.values()],L,nl,ev,chips,mult,pts,raised,dealt,combo:S.combo,wallClr,wallPts}}
+ return{tBonus,cells,color:pc.color,sz,cleared:[...clr.values()],L,nl,ev,chips,mult,pts,raised,dealt,combo:S.combo,wallClr,wallPts}}
 function hammer(S,r,c){const x=S.board[r][c];if(!x||x.c===BROKEN)return null;S.board[r][c]=null;return[{r,c,col:x.c}]}
 function sweepRow(S,r){const out=[];for(let c=0;c<S.n;c++){const x=S.board[r][c];if(x&&x.c!==BROKEN){out.push({r,c,col:x.c});S.board[r][c]=null}}return out.length?out:null}
 // ---------- Economía y tienda ----------
@@ -434,7 +469,15 @@ let BEST=Object.assign({run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]},LS
 let S=null;
 function saveBest(){LS.set('bm_best',BEST)}
 function saveSet(){LS.set('bm_set',SET)}
-function saveGame(){if(!S)return;const k=S.mode==='run'?'bm_run':'bm_zen';if(S.phase==='over'||(S.mode==='zen'&&S.phase==='lost'))LS.del(k);else LS.set(k,S)}
+const MKEY={run:'bm_run',zen:'bm_zen',daily:'bm_daily'};
+function saveGame(){if(!S)return;if(S.mode==='daily'&&S.phase==='lost')recordDaily();const k=MKEY[S.mode];if(!k||S.practice)return;if(S.phase==='over'||(S.mode!=='run'&&S.phase==='lost'))LS.del(k);else LS.set(k,S)}
+function pad2(n){return(n<10?'0':'')+n}
+function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())}
+function dayLabel(d){d=d||new Date();try{return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})}catch(e){return dayKey(d)}}
+function prevDay(k){const[y,m,d]=k.split('-').map(Number);return dayKey(new Date(y,m-1,d-1))}
+function untilTomorrow(){const n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);const m=Math.max(0,Math.round((t-n)/60000));return Math.floor(m/60)+' h '+pad2(m%60)+' min'}
+function streakNow(){const t=dayKey();return BEST.lastDay===t||BEST.lastDay===prevDay(t)?(BEST.streak||0):0}
+function modeOver(){return S.mode==='run'?runOver():S.mode==='rush'?rushOver():S.mode==='daily'?dailyOver():zenOver()}
 
 // ---------- Imágenes ----------
 (function(){const st=document.documentElement.style;for(const k in AS)st.setProperty('--a-'+k,'url("'+AS[k]+'")')})();
@@ -678,7 +721,7 @@ function tutAnim(){if(!tutOn)return;const h=$('#tut .hand');h.animate([{transfor
 
 // ---------- Jugada ----------
 let seqGen=0;
-function doPlace(i,r,c){const before=S.score;const res=place(S,i,r,c);if(!res)return;hideTut();
+function doPlace(i,r,c){const before=S.score,rsh=S.reshuffles||0;const res=place(S,i,r,c);if(!res)return;hideTut();
  SFX.place();vib(10);
  res.cells.forEach(([rr,cc])=>V.pops.push({r:rr,c:cc,t0:vt}));
  const pcR=res.cells.reduce((a,x)=>a+x[0],0)/res.sz,pcC=res.cells.reduce((a,x)=>a+x[1],0)/res.sz;
@@ -696,6 +739,9 @@ function doPlace(i,r,c){const before=S.score;const res=place(S,i,r,c);if(!res)re
  if(res.wallClr&&res.wallClr.length){res.wallClr.forEach((o,k)=>V.clears.push({r:o.r,c:o.c,col:o.col,t0:vt,delay:300+k*25}));setTimeout(()=>{clearSound(1,0);floatText('+'+fmt(res.wallPts),W/2,G.by+G.bs/2,'#ffe066',24)},320)}
  if(res.dealt)V.dealT=vt;
  if(S.mode==='zen'&&S.score>BEST.zen){BEST.zen=S.score;saveBest()}
+ if(S.mode==='rush'){if(res.tBonus>0)setTimeout(()=>floatText('+'+res.tBonus+' s',W/2,G.by-6,'#7cf7ff',26,1000),200);
+  if((S.reshuffles||0)>rsh&&S.phase==='play'){toast('Sin hueco: piezas nuevas (−5 s)');SFX.err();V.dealT=vt}}
+ if(S.mode==='daily'&&S.ghosts){const pass=S.ghosts.filter(g=>g.s>before&&g.s<=S.score);if(pass.length){const g=pass[pass.length-1];setTimeout(()=>{toast('👻 ¡Has superado a '+g.n+'!');[0,7].forEach((k,j)=>tone(mtof(79+k),.18,'triangle',.06,j*.09))},500)}}
  runSequence(res,before,cx,cy);
  saveGame();hud();afterPhase()}
 function setBoxes(ch,mu){kick();$('#chipsBox').textContent=fmt(ch);$('#multBox').textContent=fmtM(mu)}
@@ -727,7 +773,7 @@ function afterPhase(){renderTools();
  const G0=S;
  if(S.phase==='won'){V.lock=true;setTimeout(()=>{if(S!==G0){V.lock=false;return}SFX.win();bigText('¡RONDA SUPERADA!','#4ade80');fxImg('fx_confeti',W/2,G.by+G.bs*0.4,G.bs*0.4,G.bs*1.1,1200);
    for(let k=0;k<40;k++)burst(G.bx+Math.random()*G.bs,G.by+Math.random()*G.bs*0.5,k%7,1);setTimeout(()=>{V.lock=false;if(S===G0&&S.phase==='won')roundWon()},1300)},650)}
- else if(S.phase==='lost'){V.lock=true;hideTut();setTimeout(()=>{if(S!==G0){V.lock=false;return}V.loseT=vt;kick();SFX.lose();vib(120);bigText(S.lostWhy==='pieces'?'¡SIN PIEZAS!':'¡SIN HUECO!','#ff4a5a');sticker(Math.random()<.5?'pg_enfado':'pg_sorpresa');setTimeout(()=>{V.lock=false;if(S!==G0||S.phase!=='lost')return;S.mode==='run'?runOver():zenOver()},1600)},450)}
+ else if(S.phase==='lost'){V.lock=true;hideTut();setTimeout(()=>{if(S!==G0){V.lock=false;return}V.loseT=vt;kick();SFX.lose();vib(120);bigText({pieces:'¡SIN PIEZAS!',time:'¡TIEMPO!',end:'¡FIN DEL RETO!'}[S.lostWhy]||'¡SIN HUECO!',S.lostWhy==='end'?'#ffd35a':'#ff4a5a');sticker(Math.random()<.5?'pg_enfado':'pg_sorpresa');setTimeout(()=>{V.lock=false;if(S!==G0||S.phase!=='lost')return;modeOver()},1600)},450)}
  else if(S.phase==='stuck'){SFX.err();toast('¡Sin hueco! Usa un objeto o ríndete')}}
 function applyTarget(r,c){const t=V.target;const out=t.kind==='barrido'?sweepRow(S,r):hammer(S,r,c);
  if(!out){SFX.err();toast(t.kind==='barrido'?'Esa fila está vacía':'Elige una casilla con bloque');return}
@@ -739,14 +785,25 @@ function applyTarget(r,c){const t=V.target;const out=t.kind==='barrido'?sweepRow
 // ---------- HUD ----------
 function setScore(){$('#score').textContent=fmt(V.disp);if(S&&S.mode==='run')$('#bar').style.width=Math.min(100,V.disp/S.target*100)+'%'}
 function bossKey(rules){return rules.length>1?'rey':rules[0]}
-function hud(){kick();if(!S)return;const run=S.mode==='run';document.body.classList.toggle('zen',!run);
+function rival(){return(S.ghosts||[]).filter(g=>g.s>S.score).sort((a,b)=>a.s-b.s)[0]}
+let PL0=null;
+function hud(){kick();if(!S)return;const run=S.mode==='run';const B=document.body.classList;B.toggle('zen',!run);B.toggle('rush',S.mode==='rush');B.toggle('daily',S.mode==='daily');
  $('#stage').innerHTML=(run&&S.rules.length?img('mask_'+bossKey(S.rules)):'')+stageOf(S,S.ri);
  $('#gold').textContent=S.gold;$('#tlabel').textContent=run?'Objetivo':'Récord';$('#target').textContent=fmt(run?S.target:BEST.zen);
- $('#pleft').textContent=S.piecesLeft;$('#pleft').style.color=run&&S.piecesLeft<=5?'#ff6d7a':'';renderCurses();renderTools()}
-function renderCurses(){const el=$('#curses');if(!S||S.mode!=='run'){el.innerHTML='';return}let h='';
+ $('#pleft').textContent=S.piecesLeft;$('#pleft').style.color=(run||S.mode==='daily')&&S.piecesLeft<=5?'#ff6d7a':'';$('#plabel').textContent='Piezas';$('#pleft').classList.remove('hurry');
+ if(S.mode==='rush'){$('#tlabel').textContent='Récord';$('#target').textContent=fmt(BEST.rush||0);$('#plabel').textContent='Tiempo';showTime()}
+ if(S.mode==='daily'){const g=rival();$('#tlabel').textContent=g?'👻 '+g.n:'👑 ¡Líder!';$('#target').textContent=fmt(g?g.s:S.score)}
+ renderCurses();renderTools()}
+function showTime(){const s=Math.ceil(S.time);const el=$('#pleft');el.textContent=s+'s';el.style.color='';el.classList.toggle('hurry',s<=10)}
+// reloj del Contrarreloj: solo corre jugando, sin menús encima y con la app visible
+let rushT=0;setInterval(()=>{if(!S||S.mode!=='rush'||S.phase!=='play'||document.hidden||ov.classList.contains('on')||V.lock||V.target){rushT=0;return}
+ const n=performance.now();if(rushT){const a=Math.ceil(S.time);S.time=Math.max(0,S.time-(n-rushT)/1000);const b=Math.ceil(S.time);
+  if(a!==b){showTime();if(b<=10&&b>0)tone(mtof(b<=3?88:81),.05,'square',.035)}
+  if(S.time<=0){evaluate(S);hud();afterPhase()}}rushT=n},100);
+function renderCurses(){const el=$('#curses');if(!S||(S.mode!=='run'&&S.mode!=='daily')){el.innerHTML='';return}let h='';
  for(let i=0;i<S.maxCurses;i++){const id=S.curses[i];h+=id?`<div class="cslot" id="cs_${id}" data-curse="${id}" style="background-image:var(--a-card_${id})"></div>`:'<div class="cslot empty"></div>'}
  el.innerHTML=h}
-function renderTools(){const el=$('#tools');if(!S||S.mode!=='run'){el.innerHTML=S&&S.mode==='zen'?'<div class="hint">Clásico Zen: coloca piezas y borra líneas. Sin límites.</div>':'';return}
+function renderTools(){const el=$('#tools');if(!S||S.mode!=='run'){el.innerHTML=!S?'':'<div class="hint">'+({zen:'Clásico Zen: coloca piezas y borra líneas. Sin límites.',rush:'Contrarreloj: cada línea +2 s · el combo y el tablero limpio dan más tiempo.',daily:(S.practice?'Práctica (no cuenta) · ':'')+'La misma partida para todos hoy. ¡Supera a los fantasmas!'}[S.mode]||'')+'</div>';return}
  if(V.target){el.innerHTML=`<div class="hint">${V.target.kind==='barrido'?'Toca una casilla de la fila que quieres barrer':'Toca la casilla que quieres borrar'}</div><button class="tbtn" data-tool="cancel"><span style="font-size:22px">✖</span><small>Cancelar</small></button>`;return}
  if(!S.items.length&&!has(S,'tijera')&&!has(S,'rotor')&&S.phase!=='stuck'){if(el.innerHTML){el.innerHTML='';requestAnimationFrame(layout)}return}
  const wasEmpty=!el.innerHTML;let h='';for(let i=0;i<S.maxItems;i++){const id=S.items[i];h+=id?`<button class="tbtn" data-tool="item" data-i="${i}">${img('i_'+id)}<small>${ITEMS[id].n}</small></button>`:'<div class="tbtn empty"></div>'}
@@ -806,14 +863,34 @@ function showMenu(){S=null;document.body.classList.add('inmenu');V.drag=null;V.t
  ${run?`<button class="btn primary" data-a="cont">Continuar run<small>${stageOf(run,run.ri)} · ${fmt(run.total)} pts</small></button>`:''}
  <button class="btn ${run?'':'primary'}" data-a="newrun">Nueva run</button>
  <button class="btn" data-a="zen">Clásico Zen${zen?'<small>continuar partida</small>':''}</button>
+ <div class="mrow2"><button class="btn" data-a="rush">⏱ Contrarreloj<small>Récord ${fmt(BEST.rush||0)}</small></button><button class="btn" data-a="daily">📅 Reto Diario<small>${dailyTag()}</small></button></div>
  <div class="row2"><button class="btn small" data-a="album">${bi('i_libro','Álbum')}</button><button class="btn small" data-a="settings">${bi('i_ajustes','Ajustes')}</button></div>
  <div class="row2"><button class="btn small" data-a="help">Cómo jugar</button>${NATIVE?'<button class="btn small" data-a="exitq">Salir del juego</button>':''}</div>
- <div class="records">${img('i_estrella','width:16px;vertical-align:-3px')} Mejor run: <b>${fmt(BEST.run)}</b> · Acto máx.: <b>${BEST.act||'—'}</b> · Victorias: <b>${BEST.wins}</b><br>Récord Zen: <b>${fmt(BEST.zen)}</b></div>`,'menu');BACK=NATIVE?A.exitq:null}
+ <div class="records">${img('i_estrella','width:16px;vertical-align:-3px')} Mejor run: <b>${fmt(BEST.run)}</b> · Acto máx.: <b>${BEST.act||'—'}</b> · Victorias: <b>${BEST.wins}</b><br>Récord Zen: <b>${fmt(BEST.zen)}</b> · Contrarreloj: <b>${fmt(BEST.rush||0)}</b> · Racha: <b>${streakNow()}🔥</b></div>`,'menu');BACK=NATIVE?A.exitq:null}
 A.newrun=()=>{if(LS.get('bm_run',null)){BACK0=showMenu;show(`<h2>¿Nueva run?</h2><div class="panel"><p>Tienes una run a medias. Si empiezas otra, se perderá.</p></div><button class="btn primary" data-a="newrun2">Empezar de cero</button><button class="btn" data-a="menu">Volver</button>`);return}A.newrun2()};
 A.newrun2=()=>{S=newRun((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.cont=()=>{const r=LS.get('bm_run',null);if(!r)return showMenu();S=r;enterGame()};
 A.zen=()=>{const z=LS.get('bm_zen',null);S=z||newZen((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.menu=()=>{saveGame();showMenu()};
+function dailyTag(){const t=dayKey(),s=streakNow();const d=BEST.daily&&BEST.daily[t];const sv=LS.get('bm_daily',null);
+ return(s?'🔥'+s+' · ':'')+(d!=null?'Hecho: '+fmt(d)+' pts':sv&&sv.day===t?'Continuar':'¡Nuevo reto!')}
+A.rush=()=>{S=newRush((Math.random()*2147483647)|0);enterGame()};
+A.daily=()=>{const t=dayKey();const sv=LS.get('bm_daily',null);
+ if(sv&&sv.day===t&&sv.phase!=='lost'){S=sv;return enterGame()}
+ if(BEST.daily&&BEST.daily[t]!=null){BACK0=showMenu;const pos=dailyRank(BEST.daily[t],dailyGhosts(t));
+  return show(`${hero(mascotImg())}<h2>Reto de hoy completado</h2><div class="nextinfo">${dayLabel()} · ${fmt(BEST.daily[t])} pts · ${pos}º de 8</div><div class="panel"><p>El próximo reto llega en <b>${untilTomorrow()}</b>. Racha: <b>${streakNow()}🔥</b></p><p style="color:var(--muted)">Puedes practicar con las piezas de hoy, pero no cambia tu puntuación.</p></div>
+   <button class="btn primary" data-a="dailyprac">Practicar</button><button class="btn small" data-a="menu2">Menú</button>`)}
+ dailyIntro(false)};
+function dailyRank(sc,gh){return gh.filter(g=>g.s>sc).length+1}
+function dailyIntro(prac){const t=dayKey();S=newDaily(t,dayLabel());S.practice=prac;S.ghosts=dailyGhosts(t);BACK0=()=>{S=null;showMenu()};
+ show(`<h2>📅 Reto Diario</h2><div class="nextinfo">${dayLabel()}${prac?' · práctica':''}</div><div class="panel">
+ <p>La <b>misma partida</b> para todo el mundo hoy: <b>40 piezas</b> y estas 2 Maldiciones. Haz todos los puntos que puedas.</p>
+ <div class="dcards">${S.curses.map(id=>`<div class="cslot" style="background-image:var(--a-card_${id})"></div>`).join('')}</div>
+ ${S.curses.map(id=>`<div class="dcur"><b>${CURSES[id].n}:</b> ${CURSES[id].d}</div>`).join('')}
+ <p>Rivales de hoy: ${S.ghosts.length} fantasmas 👻. ${prac?'':'<b>Solo cuenta el primer intento.</b>'}</p></div>
+ <button class="btn primary" data-a="dailygo">¡A jugar!</button><button class="btn small" data-a="menu2">Volver</button>`)}
+A.dailyprac=()=>dailyIntro(true);
+A.dailygo=()=>{if(!S||S.mode!=='daily')return showMenu();saveGame();enterGame()};
 A.help=()=>show(`${backBtn()}<h2>Cómo jugar</h2><div class="panel">
  <p>🧩 Arrastra las piezas al tablero. Completa una <b>fila o columna</b> para borrarla.</p>
  <p>🔵 Cada casilla da <b>fichas</b>; cada línea, +10. 🔴 El <b>Multi</b> es el nº de líneas borradas a la vez. Puntos = Fichas × Multi.</p>
@@ -843,7 +920,7 @@ A.avatar=()=>show(`${backBtn()}<h2>Elige tu avatar</h2><div class="avs">${AVATAR
 A.setfr=v=>{SET.frame=v;saveSet();SFX.card();A.avatar()};
 A.setav=v=>{SET.avatar=v;saveSet();SFX.card();A.avatar()};
 A.wipe=()=>{BACK0=A.settings;show(`<h2>¿Seguro?</h2><div class="panel"><p>Se borrarán los récords, el álbum y las partidas guardadas.</p></div><button class="btn primary" data-a="wipe2">Sí, borrar</button><button class="btn" data-a="settings">No</button>`)};
-A.wipe2=()=>{LS.del('bm_run');LS.del('bm_zen');BEST={run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]};saveBest();showMenu()};
+A.wipe2=()=>{LS.del('bm_run');LS.del('bm_zen');LS.del('bm_daily');BEST={run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]};saveBest();showMenu()};
 A.album=()=>{const ids=Object.keys(CURSES);const act=ids.filter(i=>!CURSES[i].off),seen=act.filter(i=>BEST.seenC.includes(i)).length;
  const order=[...act,...ids.filter(i=>CURSES[i].off)];
  const bossIds=['grieta','niebla','muro','rey','avaro','bruja','gigante','reloj','plaga'];
@@ -857,19 +934,23 @@ const wrapBack=(k,t)=>{const f=A[k];A[k]=(...a)=>{const r=f(...a);BACK=t;return 
 wrapBack('help',()=>S?showPause():showMenu());wrapBack('settings',()=>S?showPause():showMenu());wrapBack('avatar',()=>S?showPause():showMenu());wrapBack('mascot',()=>A.settings());wrapBack('album',showMenu);
 function showPause(){show(`<h2>Pausa</h2><div class="nextinfo">${stageOf(S,S.ri)}${S.mode==='run'?' · '+fmt(S.total)+' pts en total':''}</div>
  <button class="btn primary" data-a="resume">Seguir jugando</button>${togHTML()}<button class="btn small" data-a="settings">${bi('i_ajustes','Ajustes y aspecto')}</button><button class="btn small" data-a="help">Cómo jugar</button>
- <button class="btn small" data-a="menu">Salir al menú (se guarda)</button>
- <button class="btn small" data-a="abandon">${S.mode==='run'?'Abandonar run':'Nueva partida Zen'}</button>`);BACK=A.resume}
+ <button class="btn small" data-a="menu">Salir al menú (${S.mode==='rush'||S.practice?'se pierde':'se guarda'})</button>
+ <button class="btn small" data-a="abandon">${{run:'Abandonar run',zen:'Nueva partida Zen',rush:'Reiniciar contrarreloj',daily:S.practice?'Reiniciar práctica':'Terminar el reto'}[S.mode]}</button>`);BACK=A.resume}
 A.resume=()=>{if(!S)return showMenu();if(['boss','summary','shop','victory'].includes(S.phase))return routePhase();closeOv();showTut()};
 A.abandon=()=>{BACK0=showPause;if(S.mode==='zen'){BACK0=null;LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame();return}
+ if(S.mode==='rush'){BACK0=null;return A.rush()}
+ if(S.mode==='daily'){if(S.practice){BACK0=null;return dailyIntro(true)}
+  return show(`<h2>¿Terminar el reto?</h2><div class="panel"><p>Tu puntuación de hoy quedará en <b>${fmt(S.score)}</b> y no podrás repetir el intento oficial.</p></div><button class="btn primary" data-a="dailyend">Sí, terminar</button><button class="btn" data-a="resume">No</button>`)}
  show(`<h2>¿Abandonar?</h2><div class="panel"><p>La run terminará aquí y se guardará tu puntuación.</p></div><button class="btn primary" data-a="abandon2">Sí, abandonar</button><button class="btn" data-a="resume">No</button>`)};
 A.abandon2=()=>runOver(true);
+A.dailyend=()=>{S.phase='lost';S.lostWhy='end';dailyOver()};
 function enterGame(){document.body.classList.remove('inmenu');closeOv();$('#big').innerHTML='';V.beams=[];V.flash=0;V.parts=[];V.clears=[];V.pops=[];V.floats=[];V.fx=[];V.loseT=0;V.drag=null;V.target=null;V.lock=false;V.dealT=vt;
  V.disp=V.goal=S.score||0;setBoxes(0,0);$('#chipsBox').classList.add('dim');$('#multBox').classList.add('dim');
  hud();setScore();requestAnimationFrame(()=>{layout();routePhase()})}
 function routePhase(){switch(S.phase){
  case'boss':return showBoss();case'won':return roundWon();case'summary':return showSummary();case'shop':return showShop();
- case'victory':return showVictory();case'lost':return S.mode==='run'?runOver():zenOver();case'over':return runOver();
- default:closeOv();if(S.mode==='run'&&S.turn===0)setTimeout(()=>bigText('OBJETIVO '+fmt(S.target),'#ffd35a'),250);showTut();afterPhase()}}
+ case'victory':return showVictory();case'lost':return modeOver();case'over':return runOver();
+ default:closeOv();if(S.turn===0){const bt=S.mode==='run'?'OBJETIVO '+fmt(S.target):S.mode==='rush'?'¡60 SEGUNDOS!':S.mode==='daily'?(S.practice?'PRÁCTICA':'RETO DEL DÍA'):'';if(bt)setTimeout(()=>bigText(bt,'#ffd35a'),250)}showTut();afterPhase()}}
 function showBoss(){const k=bossKey(S.rules);
  show(`<div class="bosslabel">${S.ri<9?'Acto '+(Math.floor(S.ri/3)+1)+' · Jefe':'Jefe infinito'}</div>
  <div class="bossart">${img('fx_runas','').replace('<img','<img class="runes"')}${img('fx_humo').replace('<img','<img class="smoke"')}${img('mask_'+k).replace('<img','<img class="mask"')}</div><h2>${bossName(S.rules)}</h2>
@@ -948,6 +1029,22 @@ function runOver(force){
  show(`<div class="row" style="justify-content:center;gap:14px">${avHTML(70)}${img(md).replace('<img','<img class="medal"')}${img(S.wonCounted?mascotImg():'mascota_triste','height:110px')}</div>
  <h2>${S.wonCounted?'Run completada':'Fin de la run'}</h2><div class="nextinfo">${mn}</div>${rec?`<div class="bosslabel" style="color:#ffd35a">${img('i_estrella','width:18px;vertical-align:-3px')} Nuevo récord ${img('i_estrella','width:18px;vertical-align:-3px')}</div>`:''}${statsHTML()}
  <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="newrun2">Nueva run</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
+function rushOver(){S.phase='lost';if(!S.done){S.done=1;S.newRec=S.score>(BEST.rush||0);if(S.newRec)BEST.rush=S.score;saveBest()}
+ show(`${hero(S.newRec?mascotImg():'mascota_triste')}<h2>${S.lostWhy==='time'?'¡Se acabó el tiempo!':'¡Sin hueco!'}</h2>${S.newRec?`<div class="bosslabel" style="color:#ffd35a">${img('i_estrella','width:18px;vertical-align:-3px')} Nuevo récord ${img('i_estrella','width:18px;vertical-align:-3px')}</div>`:''}
+ <div class="panel"><div class="line"><span>Puntos</span><b style="color:#fff">${fmt(S.score)}</b></div><div class="line"><span>Récord Contrarreloj</span><b>${fmt(BEST.rush)}</b></div><div class="line"><span>Líneas borradas</span><b>${S.stats.lines||0}</b></div><div class="line"><span>Mejor jugada</span><b>${fmt(S.stats.bestPlay)}</b></div></div>
+ <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="rush">Otra vez</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
+function recordDaily(){if(!S||S.mode!=='daily'||S.practice||S.done)return;S.done=1;const t=S.day;BEST.daily=BEST.daily||{};if(BEST.daily[t]==null){BEST.daily[t]=S.score;
+   BEST.streak=BEST.lastDay===prevDay(t)?(BEST.streak||0)+1:BEST.lastDay===t?(BEST.streak||1):1;BEST.lastDay=t;BEST.bestStreak=Math.max(BEST.bestStreak||0,BEST.streak);
+   const ks=Object.keys(BEST.daily).sort();while(ks.length>40)delete BEST.daily[ks.shift()]}
+  saveBest();LS.del('bm_daily')}
+function dailyOver(){S.phase='lost';recordDaily();
+ const me=S.score,rows=S.ghosts.map(g=>({n:g.n,s:g.s})).concat([{n:'Tú',s:me,me:1}]).sort((a,b)=>b.s-a.s||(b.me?1:0)-(a.me?1:0));const pos=rows.findIndex(r=>r.me)+1;
+ const md=['🥇','🥈','🥉'];
+ show(`<div class="row" style="justify-content:center;gap:14px">${avHTML(64)}${img(pos<=3?mascotImg():'mascota_triste','height:100px')}</div><h2>${pos===1?'¡Primero del día!':pos<=3?'¡Al podio!':'Reto terminado'}</h2>
+ <div class="nextinfo">${S.dayLabel}${S.practice?' · práctica (no cuenta)':''} · ${pos}º de ${rows.length}</div>
+ <div class="panel lb">${rows.map((r,k)=>`<div class="line ${r.me?'me':''}"><span>${md[k]||(k+1)+'.'} ${r.me?avHTML(22)+' <b>Tú</b>':'👻 '+r.n}</span><b ${r.me?'style="color:#fff"':''}>${fmt(r.s)}</b></div>`).join('')}</div>
+ <div class="nextinfo">🔥 Racha: ${streakNow()} día${streakNow()===1?'':'s'} · Nuevo reto en ${untilTomorrow()}</div>
+ <button class="btn" data-a="share">Compartir resultado</button><button class="btn primary" data-a="dailyprac">Practicar</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 function zenOver(){S.phase='lost';saveGame();show(`${hero('mascota_triste')}<h2>Fin de la partida</h2><div class="panel"><div class="line"><span>Puntos</span><b style="color:#fff">${fmt(S.score)}</b></div><div class="line"><span>Récord Zen</span><b>${fmt(BEST.zen)}</b></div><div class="line"><span>Mejor jugada</span><b>${fmt(S.stats.bestPlay)}</b></div></div>
  <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="zenagain">Otra partida</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 function showRetry(){const why=S.lostWhy==='pieces'?'Te quedaste sin piezas':'No cabía ninguna pieza';
@@ -961,7 +1058,7 @@ A.endrun=()=>runOver(true);
 A.togretry=()=>{SET.retry=!SET.retry;saveSet();SFX.click();A.settings()};
 A.zenagain=()=>{LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.menu2=()=>showMenu();
-A.share=()=>{const t=S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos, llegué a ${stageOf(S,Math.min(S.ri,8))}. Mejor jugada: ${fmt(S.stats.bestPlay)}. ¿Me superas?`:`🟪 Bloque Maldito (Zen): ${fmt(S.score)} puntos. ¿Me superas?`;
+A.share=()=>{const t=S.mode==='rush'?`⏱ Bloque Maldito · Contrarreloj: ${fmt(S.score)} puntos en una partida. ¿Me superas?`:S.mode==='daily'?`📅 Bloque Maldito · Reto Diario ${S.dayLabel}: ${fmt(S.score)} puntos (${dailyRank(S.score,S.ghosts||[])}º de 8) 🔥${streakNow()}. ¿Me superas con las mismas piezas?`:S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos, llegué a ${stageOf(S,Math.min(S.ri,8))}. Mejor jugada: ${fmt(S.stats.bestPlay)}. ¿Me superas?`:`🟪 Bloque Maldito (Zen): ${fmt(S.score)} puntos. ¿Me superas?`;
  const copy=()=>{try{navigator.clipboard.writeText(t).then(()=>toast('Copiado: pégalo donde quieras'),()=>toast(t))}catch(e){toast(t)}};
  try{if(navigator.share){navigator.share({text:t}).catch(e=>{if(!e||e.name!=='AbortError')copy()});return}}catch(e){}
  copy()};
