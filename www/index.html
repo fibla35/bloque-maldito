@@ -508,7 +508,7 @@ function drawLights(B){const L=B.lights,n=L.length,r=B.lr*G.fw;const st=animOn()
 function animOn(){return !SET.eco&&!document.hidden}
 setInterval(()=>{if(!animOn())return;AF=(AF+1)%4;ASTEP++;
  if(S&&!ov.classList.contains('on')&&((SKINS[SET.skin]||{}).anim||curBoard().anim||curBoard().lights)&&!RUN){RUN=true;IDLE=3;last=performance.now();requestAnimationFrame(loop)}
- document.querySelectorAll('img[data-fa]').forEach(el=>{const k='mc_'+el.dataset.fa+(AF?'_'+AF:'');if(AS[k])el.src=AS[k]})},220);
+ document.querySelectorAll('img[data-fa]').forEach((el,i)=>{const f=Math.floor((ASTEP+i*5)/(2+i%2))%4;const k='mc_'+el.dataset.fa+(f?'_'+f:'');if(AS[k]&&el.dataset.cf!=f){el.dataset.cf=f;el.src=AS[k]}})},220);
 // cada modo tiene su tablero propio
 const MODE_BOARD={rush:'reloj',daily:'luna'};
 function curBoard(){return BOARDS[(S&&MODE_BOARD[S.mode])||SET.board]||BOARDS.madera}
