@@ -959,8 +959,9 @@ const wrapBack=(k,t)=>{const f=A[k];A[k]=(...a)=>{const r=f(...a);BACK=t;return 
 wrapBack('help',()=>S?showPause():showMenu());wrapBack('settings',()=>S?showPause():showMenu());wrapBack('avatar',()=>S?showPause():showMenu());wrapBack('mascot',()=>A.settings());wrapBack('album',showMenu);
 function showPause(){show(`<h2>Pausa</h2><div class="nextinfo">${stageOf(S,S.ri)}${S.mode==='run'?' · '+fmt(S.total)+' pts en total':''}</div>
  <button class="btn primary" data-a="resume">Seguir jugando</button>${togHTML()}<button class="btn small" data-a="settings">${bi('i_ajustes','Ajustes y aspecto')}</button><button class="btn small" data-a="help">Cómo jugar</button>
+ ${S.mode==='run'&&S.snap&&['play','stuck'].includes(S.phase)&&SET.retry?'<button class="btn small" data-a="restartq">🔄 Reiniciar ronda</button>':''}${S.mode==='run'?'<button class="btn small" data-a="newrunq">Empezar run nueva</button>':''}
  <button class="btn small" data-a="menu">Salir al menú (${S.mode==='rush'||S.practice?'se pierde':'se guarda'})</button>
- <button class="btn small" data-a="abandon">${{run:'Abandonar run',zen:'Nueva partida Zen',rush:'Reiniciar contrarreloj',daily:S.practice?'Reiniciar práctica':'Terminar el reto'}[S.mode]}</button>`);BACK=A.resume}
+ <button class="btn small" data-a="abandon">${{run:'Abandonar run',zen:'🔄 Reiniciar partida Zen',rush:'🔄 Reiniciar contrarreloj',daily:S.practice?'🔄 Reiniciar práctica':'Terminar el reto'}[S.mode]}</button>`);BACK=A.resume}
 A.resume=()=>{if(!S)return showMenu();if(['boss','summary','shop','victory'].includes(S.phase))return routePhase();closeOv();showTut()};
 A.abandon=()=>{BACK0=showPause;if(S.mode==='zen'){BACK0=null;LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame();return}
  if(S.mode==='rush'){BACK0=null;return A.rush()}
@@ -968,6 +969,9 @@ A.abandon=()=>{BACK0=showPause;if(S.mode==='zen'){BACK0=null;LS.del('bm_zen');S=
   return show(`<h2>¿Terminar el reto?</h2><div class="panel"><p>Tu puntuación de hoy quedará en <b>${fmt(S.score)}</b> y no podrás repetir el intento oficial.</p></div><button class="btn primary" data-a="dailyend">Sí, terminar</button><button class="btn" data-a="resume">No</button>`)}
  show(`<h2>¿Abandonar?</h2><div class="panel"><p>La run terminará aquí y se guardará tu puntuación.</p></div><button class="btn primary" data-a="abandon2">Sí, abandonar</button><button class="btn" data-a="resume">No</button>`)};
 A.abandon2=()=>runOver(true);
+A.restartq=()=>{BACK0=showPause;show(`<h2>¿Reiniciar la ronda?</h2><div class="panel"><p>Vuelves al principio de esta ronda con el oro, las Maldiciones y los objetos que tenías al empezarla. Los puntos de esta ronda se pierden.</p></div><button class="btn primary" data-a="retry">🔄 Sí, reiniciar</button><button class="btn" data-a="resume">No</button>`)};
+A.newrunq=()=>{BACK0=showPause;show(`<h2>¿Empezar una run nueva?</h2><div class="panel"><p>Esta run termina aquí (tu récord se guarda) y empiezas desde el Acto 1.</p></div><button class="btn primary" data-a="newrunyes">Sí, run nueva</button><button class="btn" data-a="resume">No</button>`)};
+A.newrunyes=()=>{if(S&&S.total>BEST.run){BEST.run=S.total;saveBest()}LS.del('bm_run');A.newrun2()};
 A.dailyend=()=>{S.phase='lost';S.lostWhy='end';dailyOver()};
 function enterGame(){if(S&&MODE_BOARD[S.mode]&&!IMG[curBoard().img]){loadImg(curBoard().img).then(()=>{layout();kick()})}document.body.classList.remove('inmenu');closeOv();$('#big').innerHTML='';V.beams=[];V.flash=0;V.parts=[];V.clears=[];V.pops=[];V.floats=[];V.fx=[];V.loseT=0;V.drag=null;V.target=null;V.lock=false;V.dealT=vt;
  V.disp=V.goal=S.score||0;setBoxes(0,0);$('#chipsBox').classList.add('dim');$('#multBox').classList.add('dim');
