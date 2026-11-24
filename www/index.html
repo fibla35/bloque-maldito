@@ -500,8 +500,8 @@ const FRAME_ANIM={fuego:4,rayos:4,corazones:4,astros:4,murcielagos:4,arcoiris:4}
 let AF=0,ASTEP=0;
 // bombillas de feria dibujadas en directo: corren en el sentido del reloj, cambian de color en cada vuelta y parpadean al borrar varias líneas
 const BULB_PAL=['#ffd84a','#ff5fa2','#4fe3ff','#7dff6a','#c18cff','#ff8a3d'];
-function drawLights(B){const L=B.lights,n=L.length,r=B.lr*G.fw;const st=animOn()?ASTEP:0;const fl=V.bulbT&&vt-V.bulbT<900?Math.floor((vt-V.bulbT)/110):-1;const col=BULB_PAL[Math.floor(st/n)%BULB_PAL.length];
- ctx.save();for(let i=0;i<n;i++){let on,c=col;if(fl>=0){on=fl%2===0;c=BULB_PAL[(i+fl)%BULB_PAL.length]}else on=((i-st)%4+4)%4===0;if(!on)continue;
+function drawLights(B){const L=B.lights,n=L.length,r=B.lr*G.fw;const st=animOn()?ASTEP:0;const fl=V.bulbT&&vt-V.bulbT<900?Math.floor((vt-V.bulbT)/110):-1;const col=BULB_PAL[Math.floor(st/n)%BULB_PAL.length];const head=st%n;
+ ctx.save();for(let i=0;i<n;i++){let on,c=col,a=1;if(fl>=0){on=fl%2===0;c=BULB_PAL[(i+fl)%BULB_PAL.length]}else{const k=((head-i)%n+n)%n;on=k<3;a=[1,.55,.25][k]}if(!on)continue;ctx.globalAlpha=a;
   const x=G.fx+L[i][0]*G.fw,y=G.fy+L[i][1]*G.fh;ctx.globalCompositeOperation='lighter';let g=ctx.createRadialGradient(x,y,r*0.5,x,y,r*2.9);g.addColorStop(0,c+'e0');g.addColorStop(.45,c+'55');g.addColorStop(1,c+'00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.9,0,7);ctx.fill();
   ctx.globalCompositeOperation='source-over';g=ctx.createRadialGradient(x-r*.3,y-r*.35,r*.08,x,y,r*1.02);g.addColorStop(0,'#ffffff');g.addColorStop(.35,c);g.addColorStop(1,c);ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*1.04,0,7);ctx.fill();
   ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.arc(x-r*.32,y-r*.36,r*.22,0,7);ctx.fill()}ctx.restore()}function frImg(f,cls){const a=FRAME_ANIM[f];return`<img ${cls?'class="'+cls+'" ':''}src="${AS['mc_'+f]}" ${a?'data-fa="'+f+'"':''} alt="">`}
@@ -524,7 +524,9 @@ function loadImg(k){return new Promise(res=>{if(IMG[k]||!AS[k])return res();cons
 function loadSkin(id){const s=SKINS[id],p=s.pre;const ks=[];for(let i=0;i<8;i++){ks.push(p+i);for(let f=1;f<(s.anim||1);f++)ks.push(p+i+'_'+f)}return Promise.all(ks.map(loadImg))}
 function loadBoard(b){const ks=[b.img];for(let f=1;f<(b.anim||1);f++)ks.push(b.img+'_'+f);return Promise.all(ks.map(loadImg))}
 function loadImages(){loadBoard(BOARDS[SET.board]||BOARDS.madera);return Promise.all([(BOARDS[SET.board]||BOARDS.madera).img,'tablero','broken','fx_destello','fx_onda','fx_explosion','fx_gemas','fx_rayo','fx_cometa','fx_niebla','fx_confeti'].map(loadImg).concat([loadSkin(SET.skin)]))}
-function spr(col){if(col===BROKEN)return IMG.broken;const s=SKINS[SET.skin],p=s.pre,c=col===STONE?7:col;return(s.anim&&AF&&animOn()&&IMG[p+c+'_'+AF])||IMG[p+c]||IMG['gm_'+c]}
+// cada bloque animado lleva su propio ritmo y su propio desfase, para que no se muevan todos a la vez
+function cellFrame(x,y,s){const h=((Math.floor(x/s+.5)*73856093)^(Math.floor(y/s+.5)*19349663))>>>0;const sp=2+(h%4),ph=(h>>>3)%23;return Math.floor((ASTEP+ph)/sp)%4}
+function spr(col,f){if(col===BROKEN)return IMG.broken;const s=SKINS[SET.skin],p=s.pre,c=col===STONE?7:col;return(s.anim&&f&&animOn()&&IMG[p+c+'_'+f])||IMG[p+c]||IMG['gm_'+c]}
 function cardHTML(id,w,cls){const c=CURSES[id];const fs=Math.max(7,Math.round(w*0.085*(c.n.length>12?0.8:1)));
  return`<div class="cimg ${cls||''}" style="width:${w}px"><img src="${AS['card_'+id]}" alt=""><span style="font-size:${fs}px">${c.n}</span></div>`}
 function img(k,st){return`<img src="${AS[k]}" alt="" ${st?`style="${st}"`:''}>`}
@@ -642,7 +644,7 @@ function layout(){kick();const r=cv.getBoundingClientRect();if(r.width<10||r.hei
 new ResizeObserver(()=>layout()).observe(cv);window.addEventListener('resize',layout);
 function slotX(i){return W*(1+2*i)/6}
 function cellRect(r,c){return[G.bx+c*G.cell,G.by+r*G.cell]}
-function drawCell(col,x,y,s,scale,alpha){const im=spr(col);if(!im)return;const p=s*0.04;let w=s-2*p;if(scale&&scale!==1){const d=w*(scale-1)/2;x-=d;y-=d;w*=scale}
+function drawCell(col,x,y,s,scale,alpha){const im=spr(col,(SKINS[SET.skin]||{}).anim?cellFrame(x,y,s):0);if(!im)return;const p=s*0.04;let w=s-2*p;if(scale&&scale!==1){const d=w*(scale-1)/2;x-=d;y-=d;w*=scale}
  if(alpha!==undefined)ctx.globalAlpha=alpha;ctx.drawImage(im,x+p,y+p,w,w);if(alpha!==undefined)ctx.globalAlpha=1}
 function glowCell(col,x,y,s,a){drawCell(col,x,y,s);ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=a;drawCell(col,x,y,s);ctx.restore()}
 function burst(x,y,col,k){if(SET.eco)k=Math.ceil(k/2);const c=COLORS[col]||'#aaa';for(let i=0;i<k;i++){const a=Math.random()*Math.PI*2,sp=80+Math.random()*260;
