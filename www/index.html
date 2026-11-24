@@ -216,6 +216,7 @@ body.eco .tw,body.eco .mas,body.eco .logo .gems img,body.eco .bossart .runes,bod
 body.eco #fog{display:none}
 /* las animaciones de adorno se paran solas a los 20 s */
 .logo .gems img,.mdeco .mas,.mdeco .tw,.hero .main,.hero .deco,.bossart .runes{animation-iteration-count:8!important}
+.dzone{width:100%;max-width:340px;margin-top:34px;padding-top:12px;border-top:1px dashed #ffffff33;display:flex;gap:8px}.dzone .btn.danger{flex:1;background:#2a0f1c!important;border:1.5px solid #7a2a3a!important;border-image:none!important;border-radius:10px;box-shadow:none!important;color:#ff9aa8!important;font-size:12px;min-height:0;padding:7px 6px}
 </style>
 </head>
 <body>
@@ -959,9 +960,9 @@ const wrapBack=(k,t)=>{const f=A[k];A[k]=(...a)=>{const r=f(...a);BACK=t;return 
 wrapBack('help',()=>S?showPause():showMenu());wrapBack('settings',()=>S?showPause():showMenu());wrapBack('avatar',()=>S?showPause():showMenu());wrapBack('mascot',()=>A.settings());wrapBack('album',showMenu);
 function showPause(){show(`<h2>Pausa</h2><div class="nextinfo">${stageOf(S,S.ri)}${S.mode==='run'?' · '+fmt(S.total)+' pts en total':''}</div>
  <button class="btn primary" data-a="resume">Seguir jugando</button>${togHTML()}<button class="btn small" data-a="settings">${bi('i_ajustes','Ajustes y aspecto')}</button><button class="btn small" data-a="help">Cómo jugar</button>
- ${S.mode==='run'&&S.snap&&['play','stuck'].includes(S.phase)&&SET.retry?'<button class="btn small" data-a="restartq">🔄 Reiniciar ronda</button>':''}${S.mode==='run'?'<button class="btn small" data-a="newrunq">Empezar run nueva</button>':''}
+ ${S.mode==='run'&&S.snap&&['play','stuck'].includes(S.phase)&&SET.retry?'<button class="btn small" data-a="restartq">🔄 Reiniciar ronda</button>':''}
  <button class="btn small" data-a="menu">Salir al menú (${S.mode==='rush'||S.practice?'se pierde':'se guarda'})</button>
- <button class="btn small" data-a="abandon">${{run:'Abandonar run',zen:'🔄 Reiniciar partida Zen',rush:'🔄 Reiniciar contrarreloj',daily:S.practice?'🔄 Reiniciar práctica':'Terminar el reto'}[S.mode]}</button>`);BACK=A.resume}
+ <div class="dzone">${S.mode==='run'?'<button class="btn small danger" data-a="newrunq">Empezar run nueva</button>':''}<button class="btn small danger" data-a="abandon">${{run:'Abandonar run',zen:'🔄 Reiniciar partida Zen',rush:'🔄 Reiniciar contrarreloj',daily:S.practice?'🔄 Reiniciar práctica':'Terminar el reto'}[S.mode]}</button></div>`);BACK=A.resume}
 A.resume=()=>{if(!S)return showMenu();if(['boss','summary','shop','victory'].includes(S.phase))return routePhase();closeOv();showTut()};
 A.abandon=()=>{BACK0=showPause;if(S.mode==='zen'){BACK0=null;LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame();return}
  if(S.mode==='rush'){BACK0=null;return A.rush()}
