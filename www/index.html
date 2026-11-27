@@ -217,6 +217,7 @@ body.eco #fog{display:none}
 /* las animaciones de adorno se paran solas a los 20 s */
 .logo .gems img,.mdeco .mas,.mdeco .tw,.hero .main,.hero .deco,.bossart .runes{animation-iteration-count:8!important}
 .dzone{width:100%;max-width:340px;margin-top:34px;padding-top:12px;border-top:1px dashed #ffffff33;display:flex;gap:8px}.dzone .btn.danger{flex:1;background:#2a0f1c!important;border:1.5px solid #7a2a3a!important;border-image:none!important;border-radius:10px;box-shadow:none!important;color:#ff9aa8!important;font-size:12px;min-height:0;padding:7px 6px}
+.langrow{display:flex;gap:8px;width:100%;max-width:340px}.langrow .btn{flex:1}
 </style>
 </head>
 <body>
@@ -459,13 +460,128 @@ function choosePack(S,id){const pk=S.shop.pack;if(!pk.opts||!pk.opts.includes(id
 function setTargets(t){TARGETS=t}
 function nextRound(S){S.ri++;S.shop=null;if(S.ri===9&&!S.endless){S.phase='victory';return}startRound(S)}
 /*CORE-END*/
+// ---------- IDIOMAS: español (original) e inglés ----------
+// Todo el texto del juego está escrito en español; en inglés se traduce al vuelo
+// todo lo que entra en pantalla (frases completas primero, luego trozos).
+const EN={
+// --- menú y navegación
+"Nueva run":"New run","Continuar":"Continue","Clásico Zen":"Classic Zen","Contrarreloj":"Time Attack","Reto Diario":"Daily Challenge",
+"Álbum maldito":"Cursed Album","Ajustes":"Settings","Cambiar avatar":"Change avatar","Cómo jugar":"How to play","Salir del juego":"Quit game","Salir":"Quit","Menú":"Menu","Volver":"Back",
+"continuar partida":"continue game","Récord Zen:":"Zen record:","Récord Zen":"Zen record","Mejor run:":"Best run:","· Acto máx.:":"· Max act:","Racha:":"Streak:",
+"Contrarreloj:":"Time Attack:","¿Salir del juego?":"Quit the game?","Tu run y tus récords quedan guardados.":"Your run and records are saved.","Sí, salir":"Yes, quit","Cancelar":"Cancel",
+"¿Nueva run?":"New run?","Tienes una run a medias. Si empiezas otra, se perderá.":"You have a run in progress. Starting another will lose it.","Empezar de cero":"Start over",
+"Pausa":"Paused","Seguir jugando":"Keep playing","Ajustes y aspecto":"Settings & looks","Salir al menú":"Back to menu","Salir al menú (se guarda)":"Back to menu (saved)","Salir al menú (se pierde)":"Back to menu (lost)",
+"se guarda":"saved","se pierde":"lost","Abandonar run":"Abandon run","Empezar run nueva":"Start new run","🔄 Reiniciar ronda":"🔄 Restart round",
+"🔄 Reiniciar partida Zen":"🔄 Restart Zen game","🔄 Reiniciar contrarreloj":"🔄 Restart Time Attack","🔄 Reiniciar práctica":"🔄 Restart practice","Terminar el reto":"End the challenge",
+"¿Reiniciar la ronda?":"Restart the round?","Vuelves al principio de esta ronda con el oro, las Maldiciones y los objetos que tenías al empezarla. Los puntos de esta ronda se pierden.":"You go back to the start of this round with the gold, Curses and items you had when it began. This round's points are lost.",
+"🔄 Sí, reiniciar":"🔄 Yes, restart","No":"No","¿Empezar una run nueva?":"Start a new run?","Esta run termina aquí (tu récord se guarda) y empiezas desde el Acto 1.":"This run ends here (your record is saved) and you start again from Act 1.","Sí, run nueva":"Yes, new run",
+"¿Abandonar?":"Abandon?","La run terminará aquí y se guardará tu puntuación.":"The run will end here and your score will be saved.","Sí, abandonar":"Yes, abandon","Terminar la run":"End the run","Rendirse":"Give up",
+"🔋 Ahorro de batería:":"🔋 Battery saver:","Ahorro de batería":"Battery saver","Máxima calidad":"Maximum quality","Sí":"Yes","Música":"Music","Efectos":"Sound FX","Entendido":"Got it","Listo":"Done","¿Seguro?":"Are you sure?",
+// --- HUD y partida
+"Objetivo":"Target","Objetivo:":"Target:","Récord":"Record","Piezas":"Pieces","Tiempo":"Time","Puntos":"Points","Oro":"Gold","Multi":"Mult","Fichas":"Chips","fichas":"chips","Combo:":"Combo:","Combo +":"Combo +",
+"Acto":"Act","Ronda":"Round","Jefe":"Boss","Jefes":"Bosses","Infinito · Ronda":"Endless · Round","Modo infinito ∞":"Endless mode ∞","pts en total":"pts total","pts":"pts",
+"¡DOBLE!":"DOUBLE!","¡TRIPLE!":"TRIPLE!","¡CUÁDRUPLE!":"QUADRUPLE!","¡BESTIAL!":"BEASTLY!","¡TABLERO LIMPIO!":"CLEAN BOARD!","¡Diagonal!":"Diagonal!","¡SIN HUECO!":"NO ROOM!","¡SIN PIEZAS!":"OUT OF PIECES!",
+"¡TIEMPO!":"TIME'S UP!","¡FIN DEL RETO!":"CHALLENGE OVER!","¡RONDA SUPERADA!":"ROUND CLEARED!","¡60 SEGUNDOS!":"60 SECONDS!","RETO DEL DÍA":"TODAY'S CHALLENGE","PRÁCTICA":"PRACTICE","OBJETIVO":"TARGET",
+"¡El Muro sube!":"The Wall rises!","+1 línea":"+1 line","La Niebla oculta esta pieza":"The Fog hides this piece","Toca una pieza para girarla":"Tap a piece to rotate it",
+"¡Sin hueco! Usa un objeto o ríndete":"No room! Use an item or give up","La Tijera ya se usó en esta ronda":"The Scissors were already used this round","Elige una casilla con bloque":"Pick a cell with a block",
+"Esa fila está vacía":"That row is empty","Sin hueco: piezas nuevas (−5 s)":"No room: new pieces (−5 s)","👻 ¡Has superado a":"👻 You passed",
+"Clásico Zen: coloca piezas y borra líneas. Sin límites.":"Classic Zen: place pieces and clear lines. No limits.",
+"Contrarreloj: cada línea +2 s · el combo y el tablero limpio dan más tiempo.":"Time Attack: each line +2 s · combos and a clean board give more time.",
+"La misma partida para todos hoy. ¡Supera a los fantasmas!":"The same game for everyone today. Beat the ghosts!","Práctica (no cuenta) ·":"Practice (doesn't count) ·",
+"¡Líder!":"Leader!","Tus Maldiciones":"Your Curses","Maldiciones":"Curses","Maldición":"Curse","Objetos":"Items",
+// --- final de ronda / run
+"¡Ronda superada!":"Round cleared!","¡Ronda perdida!":"Round lost!","Ir a la tienda":"Go to the shop","Siguiente ronda ▶":"Next round ▶","Siguiente:":"Next:","Intereses":"Interest","Recompensa":"Reward",
+"Piezas sobrantes (":"Leftover pieces (","¡Arrasaste!":"Crushed it!","Derrotado":"Defeated","Fin de la partida":"Game over","Puntuación total":"Total score","Llegaste a":"You reached","Mejor jugada":"Best play",
+"Multi más alto":"Highest Mult","Maldición más útil":"Most useful Curse","Líneas borradas":"Lines cleared","Otra partida":"Play again","Otra vez":"Again","Compartir puntuación":"Share score","Compartir resultado":"Share result",
+"Copiado: pégalo donde quieras":"Copied: paste it anywhere","¡Has derrotado al Rey Maldito!":"You defeated the Cursed King!","Después: ¡el final de la run!":"Next: the end of the run!",
+"Te quedaste sin piezas":"You ran out of pieces","No cabía ninguna pieza":"No piece fit","Repetir la ronda":"Retry the round","🔄 Repetir la ronda":"🔄 Retry the round","Al perder:":"On losing:","repetir la ronda":"retry the round","empezar de cero":"start over",
+// --- tienda
+"Tienda":"Shop","Cambiar":"Reroll","Vender por":"Sell for","¿Vender?":"Sell?","Comprada":"Bought","Comprado":"Bought","Sobre maldito":"Cursed pack","Elige 1 de 3 Maldiciones (más raras)":"Choose 1 of 3 Curses (rarer)",
+"Elige una Maldición":"Choose a Curse","No quiero ninguna":"I don't want any","se venden por la mitad":"sell for half","Martillo":"Hammer","Borra una casilla.":"Clears one cell.","Barrido":"Sweep","Borra una fila a elección.":"Clears a row of your choice.",
+"Cambio":"Swap","Cambia las piezas ofrecidas.":"Swaps the offered pieces.","Común":"Common","Rara":"Rare","Épica":"Epic","Legendaria":"Legendary","Gratis":"Free","¡Gratis!":"Free!",
+// --- cómo jugar
+"🧩 Arrastra las piezas al tablero. Completa una":"🧩 Drag pieces onto the board. Complete a","🎯 En cada ronda tienes que llegar al":"🎯 Each round you must reach the",
+"antes de quedarte sin piezas. Si ninguna pieza cabe, pierdes.":"before you run out of pieces. If no piece fits, you lose.",
+"si borras en turnos seguidos, +1 Multi por turno. Se rompe al colocar sin borrar.":"if you clear on consecutive turns, +1 Mult per turn. It breaks when you place without clearing.",
+"🃏 Con el oro compra":"🃏 With gold, buy","en la tienda: cambian las reglas y disparan la puntuación. Tócalas para ver qué hacen.":"in the shop: they change the rules and boost your score. Tap them to see what they do.",
+"🎭 La 3.ª ronda de cada acto es un":"🎭 The 3rd round of each act is a","con una regla maldita. Gana los 3 actos para vencer al Rey Maldito.":"with a cursed rule. Win all 3 acts to beat the Cursed King.",
+"fila o columna":"row or column","para borrarla.":"to clear it.","¡Que empiece!":"Let's go!",
+// --- álbum
+"Por descubrir":"Undiscovered","Cómprala en una run para descubrirla":"Buy it in a run to discover it","descubiertas · 15 más en la v2":"discovered · 15 more in v2","Próximamente (v2)":"Coming soon (v2)","Medalla de oro":"Gold medal","Medalla de plata":"Silver medal","Medalla de bronce":"Bronze medal","Medalla Maldita":"Cursed medal",
+// --- ajustes y personalización
+"Idioma":"Language","Aspecto de los bloques":"Block style","Tablero":"Board","Fondo de la partida":"Game background","Música de la partida":"In-game music","Elige tu avatar":"Choose your avatar","Marco del avatar":"Avatar frame",
+"Disfraz de la mascota":"Mascot costume","Sin marco":"No frame","Borrar récords y partidas":"Delete records and saves","Se borrarán los récords, el álbum y las partidas guardadas.":"Records, the album and saved games will be deleted.","Sí, borrar":"Yes, delete",
+"Próximamente en la tienda":"Coming soon to the shop","Obsidiana llegará con la tienda de la v2":"Obsidian arrives with the v2 shop","Aún no tienes ninguna.":"You don't have any yet.",
+"Al elegir una pista suena unos segundos. En el menú y la tienda suena la feria.":"Picking a track plays a few seconds. The fair music plays in the menu and shop.",
+"Adrenalina":"Adrenaline","Batería y bajo con ritmo, sube con los combos":"Drums and bass, builds with your combos","Retro 8 bits":"Retro 8-bit","Chiptune rápido y alegre":"Fast, cheerful chiptune","Feria maldita":"Cursed fair","El órgano de feria tranquilo":"The calm fairground organ","Calma":"Calm","Caja de música suave para pensar":"Soft music box for thinking",
+"Gemas":"Gems","Las gemas clásicas":"The classic gems","Caramelo":"Candy","Hielo":"Ice","Cubitos helados":"Ice cubes","Obsidiana":"Obsidian","Neón":"Neon","Tubos de luz brillantes":"Bright light tubes","Galleta":"Cookie","Recién horneadas con glaseado":"Freshly baked with icing",
+"Galaxia":"Galaxy","Un cosmos en cada bloque":"A cosmos in every block","Feria Helada":"Frozen Fair","Cristal con nieve y carámbanos":"Glass with snow and icicles","Carnaval":"Carnival","Rombos de arlequín y plumas":"Harlequin diamonds and feathers",
+"Oro Maldito":"Cursed Gold","Oro pulido con gemas":"Polished gold with gems","Calabaza":"Pumpkin","Calabazas sonrientes":"Smiling pumpkins","Reloj de arena":"Hourglass","Arena brillante cayendo":"Glittering falling sand","Cronómetro neón":"Neon stopwatch","Neón y relojería":"Neon and clockwork",
+"Ectoplasma":"Ectoplasm","Gelatina fantasmal":"Ghostly jelly","Luna y estrellas":"Moon and stars","Terciopelo bordado":"Embroidered velvet","Gemitas ✨":"Gemlings ✨","Animada: brillo que las recorre":"Animated: a gleam sweeps across","Monstruitos ✨":"Little Monsters ✨","Animada: miran y parpadean":"Animated: they look around and blink","Lava ✨":"Lava ✨","Animada: la lava late":"Animated: the lava pulses",
+"Madera rúnica":"Runic wood","Hierro y cadenas":"Iron and chains","Huesos":"Bones","Oro y gemas":"Gold and gems","Bosque encantado":"Enchanted forest","Relojería":"Clockwork","Lunas y fantasmas":"Moons and ghosts","Cripta":"Crypt","Cripta II":"Crypt II","Galaxia II":"Galaxy II","Caramelo II":"Candy II",
+"Tesoro pirata":"Pirate treasure","Tesoro pirata II":"Pirate treasure II","Feria de luces ✨":"Fair of lights ✨","Carpa embrujada":"Haunted tent","Dulces de feria":"Fair sweets",
+// --- modos
+"¡Nuevo reto!":"New challenge!","Hecho:":"Done:","Reto de hoy completado":"Today's challenge completed","El próximo reto llega en":"The next challenge arrives in","Practicar":"Practice","Puedes practicar con las piezas de hoy, pero no cambia tu puntuación.":"You can practise with today's pieces, but it won't change your score.",
+"La misma partida para todo el mundo hoy:":"The same game for everyone today:","para todo el mundo hoy:":"for everyone today:","y estas 2 Maldiciones. Haz todos los puntos que puedas.":"and these 2 Curses. Score as many points as you can.","40 piezas":"40 pieces","misma partida":"same game",
+"Rivales de hoy:":"Today's rivals:","fantasmas.":"ghosts.","Solo cuenta el primer intento.":"Only the first attempt counts.","¡A jugar!":"Let's play!","Volver":"Back","práctica":"practice","práctica (no cuenta)":"practice (doesn't count)",
+"¿Terminar el reto?":"End the challenge?","Tu puntuación de hoy quedará en":"Today's score will stay at","y no podrás repetir el intento oficial.":"and you won't be able to repeat the official attempt.","Sí, terminar":"Yes, end it",
+"¡Primero del día!":"First of the day!","¡Al podio!":"On the podium!","Reto terminado":"Challenge over","Tú":"You","Racha":"Streak","día":"day","días":"days","Nuevo reto en":"New challenge in",
+"¡Se acabó el tiempo!":"Time's up!","¡Sin hueco!":"No room!","Nuevo récord":"New record","Récord Contrarreloj":"Time Attack record","Récord":"Record",
+// --- maldiciones
+"Brasa":"Ember","+4 Multi si borras al menos una línea.":"+4 Mult if you clear at least one line.","Ladrillo":"Brick","+3 fichas por cada casilla de la pieza colocada.":"+3 chips for each cell of the placed piece.",
+"Columnista":"Columnist","Cada columna borrada da +15 fichas extra.":"Each cleared column gives +15 extra chips.","Filero":"Rower","Cada fila borrada da +15 fichas extra.":"Each cleared row gives +15 extra chips.",
+"Pequeñín":"Tiny","Las piezas de 1–2 casillas dan +5 Multi.":"1–2 cell pieces give +5 Mult.","Gordo":"Chunky","Las piezas de 5 o más casillas dan +20 fichas.":"Pieces of 5+ cells give +20 chips.",
+"Esquinero":"Cornerman","+10 fichas si la pieza toca una esquina del tablero.":"+10 chips if the piece touches a board corner.","Ahorrador":"Saver","+1 oro al acabar la ronda por cada hueco de Maldición vacío.":"+1 gold at the end of the round for each empty Curse slot.",
+"Paciencia":"Patience","+3 piezas al límite de cada ronda.":"+3 pieces to each round's limit.","Centro":"Center","x1,5 Multi si una línea borrada pasa por el centro 4×4.":"x1.5 Mult if a cleared line crosses the central 4×4.",
+"Diagonal Maldita":"Cursed Diagonal","Las diagonales completas de lado a lado también se borran y puntúan.":"Full corner-to-corner diagonals also clear and score.","Eco":"Echo","La primera línea borrada de cada ronda cuenta dos veces.":"The first line cleared each round counts twice.",
+"Rotor":"Rotor","Puedes girar las piezas: tócalas sin arrastrar.":"You can rotate pieces: tap them without dragging.","Cadena":"Chain","El Combo suma +2 Multi por turno en vez de +1.":"Combo adds +2 Mult per turn instead of +1.",
+"Tijera":"Scissors","Una vez por ronda: toca la Tijera y luego una casilla para borrarla.":"Once per round: tap the Scissors, then a cell to clear it.","Racha de Fuego":"Fire Streak","Cada 3 turnos seguidos borrando, x2 Multi en el siguiente.":"Every 3 turns clearing in a row, x2 Mult on the next.",
+"Bolsillo":"Pocket","Guarda una pieza en reserva para usarla después.":"Keep a piece in reserve to use later.","Limpieza":"Clean Sweep","Si dejas el tablero totalmente vacío: +200 fichas.":"If you leave the board completely empty: +200 chips.",
+"Color":"Color","Una línea de un único color da x3 Multi.":"A single-color line gives x3 Mult.","Imán":"Magnet","Tras borrar, las casillas sueltas caen hacia abajo.":"After clearing, loose cells fall down.",
+"Bomba de Relojería":"Time Bomb","Cada 5 líneas borradas aparece una bomba que despeja 3×3.":"Every 5 lines cleared, a bomb appears that clears 3×3.","Espejo":"Mirror","Cada línea borrada borra también su simétrica si está llena al 75 %.":"Each cleared line also clears its mirror line if it is 75% full.",
+"Avaricia":"Greed","x2 Multi, pero solo te ofrecen 2 piezas.":"x2 Mult, but you're only offered 2 pieces.","Coleccionista":"Collector","+1 Multi permanente cada vez que borras 4+ líneas a la vez.":"+1 permanent Mult every time you clear 4+ lines at once.",
+"Segunda Oportunidad":"Second Chance","La primera vez que pierdes, se limpia medio tablero y sigues.":"The first time you lose, half the board is cleared and you go on.","Tablero XL":"XL Board","El tablero pasa a 9×9.":"The board becomes 9×9.",
+"Corona Maldita":"Cursed Crown","x1 Multi extra por cada Maldición que tengas.":"x1 extra Mult for each Curse you own.","Agujero Negro":"Black Hole","Una vez por ronda, absorbe toda la fila y columna de la casilla tocada.":"Once per round, swallows the whole row and column of the tapped cell.",
+"El Pacto":"The Pact","x4 Multi; cada ronda pierdes 3 de oro (si no tienes, se destruye).":"x4 Mult; you lose 3 gold each round (if you can't pay, it breaks).","Fénix":"Phoenix","Las líneas borradas dejan casillas de fuego que puntúan doble.":"Cleared lines leave fire cells that score double.",
+// --- jefes
+"La Grieta":"The Rift","6 casillas del tablero están rotas: no se pueden usar.":"6 board cells are broken: they can't be used.","La Niebla":"The Fog","Las piezas salen de una en una: no ves las siguientes.":"Pieces come one at a time: you can't see the next ones.",
+"El Muro":"The Wall","Cada 4 piezas sube una fila de bloques de piedra desde abajo.":"Every 4 pieces a row of stone blocks rises from the bottom.","Rey Maldito":"Cursed King","Combina dos reglas malditas al azar. Jefe final del Acto 3.":"Combines two random cursed rules. Final boss of Act 3.",
+"El Avaro":"The Miser","Tus Maldiciones de oro no funcionan; el objetivo es menor.":"Your gold Curses don't work; the target is lower.","La Bruja":"The Witch","Una de tus Maldiciones queda desactivada en la ronda.":"One of your Curses is disabled for the round.",
+"El Gigante":"The Giant","Solo salen piezas de 4–5 casillas.":"Only 4–5 cell pieces appear.","El Reloj":"The Clock","La ronda dura 60 segundos en vez de tener límite de piezas.":"The round lasts 60 seconds instead of having a piece limit.",
+"La Plaga":"The Plague","Las casillas que llevan 6 turnos sin borrarse se vuelven piedra.":"Cells left uncleared for 6 turns turn to stone.",
+// --- añadidos tras la revisión de pantallas
+"Arrastra una pieza al tablero":"Drag a piece onto the board","Álbum":"Album","Vuelves al inicio de la ronda perdida":"You go back to the start of the lost round","Modo clásico: la run termina":"Classic mode: the run ends",
+"🔵 Cada casilla da":"🔵 Each cell gives","; cada línea, +10. 🔴 El":"; each line, +10. 🔴 The","es el nº de líneas borradas a la vez. Puntos = Fichas × Multi.":"is the number of lines cleared at once. Points = Chips × Mult.","es el nº de líneas borradas a la vez.":"is the number of lines cleared at once.","Puntos = Fichas × Multi.":"Points = Chips × Mult.",
+"objetivo":"target","· Victorias:":"· Wins:","Victorias:":"Wins:","derrotados":"defeated","Por ganar la ronda":"For winning the round","Tienda maldita":"Cursed shop","maldita":"of curses","huecos":"slots","Comprar":"Buy","oro":"gold","en mano":"in hand","Vender":"Sell","Elegir":"Choose","piezas":"pieces",
+"Puedes repetir esta ronda desde el principio, con el oro, las Maldiciones y los objetos que tenías al empezarla.":"You can replay this round from the start, with the gold, Curses and items you had when it began.",
+"🔄 Reintentar ronda":"🔄 Retry round","Reintentar ronda":"Retry round","Fin de la run":"End of the run","MALDICIÓN DE":"CURSE OF","COMBO x":"COMBO x",
+"CADENAS":"CHAINS","CENTRO":"CENTER","COLUMNAS":"COLUMNS","DIAGONAL":"DIAGONAL","ECO":"ECHO","ESQUINA":"CORNER","FILAS":"ROWS","FUEGO":"FIRE","GORDO":"CHUNKY","PEQUEÑÍN":"TINY","PIEDRA":"STONE",
+"LA GRIETA":"THE RIFT","LA NIEBLA":"THE FOG","EL MURO":"THE WALL","REY MALDITO":"CURSED KING","EL AVARO":"THE MISER","LA BRUJA":"THE WITCH","EL GIGANTE":"THE GIANT","EL RELOJ":"THE CLOCK","LA PLAGA":"THE PLAGUE",
+// --- compartir
+"puntos en una partida. ¿Me superas?":"points in one game. Can you beat me?","puntos. ¿Me superas?":"points. Can you beat me?","puntos, llegué a":"points, I reached",". ¿Me superas?":". Can you beat me?",". ¿Me superas con las mismas piezas?":". Can you beat me with the same pieces?","puntos":"points",
+};
+// nodos de texto que son solo esa palabra (demasiado cortas para traducirlas dentro de otras frases)
+const EN_EXACT={"La":"The","El":"The","y":"and","de":"of","día":"day","días":"days"};
+// frases con números
+const EN_RX=[[/(\d+)º de (\d+)/g,'#$1 of $2'],[/(\d+) h (\d+) min/g,'$1 h $2 min']];
+let LANG='es',TRX=null;
+const LBOUND='A-Za-zÁÉÍÓÚÜÑáéíóúüñ';
+function buildTR(){const ks=Object.keys(EN).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));TRX=new RegExp('(?<!['+LBOUND+'])('+ks.join('|')+')(?!['+LBOUND+'])','g')}
+function tr(s){if(LANG==='es'||typeof s!=='string'||!s)return s;if(!TRX)buildTR();const k=s.trim();if(EN_EXACT[k])return s.replace(k,EN_EXACT[k]);let r=s.replace(TRX,m=>EN[m]);for(const[x,y] of EN_RX)r=r.replace(x,y);return r}
+function trNode(root){if(LANG==='es')return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const v=n.nodeValue;if(!/[A-Za-zÁÉÍÓÚáéíóúñ¡¿]/.test(v))continue;const t=tr(v);if(t!==v)n.nodeValue=t}}
+let TROBS=null;
+function setLang(l){LANG=l==='en'?'en':'es';document.documentElement.lang=LANG;
+ if(TROBS){TROBS.disconnect();TROBS=null}
+ if(LANG==='en'){trNode(document.body);TROBS=new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData'){const v=m.target.nodeValue,t=tr(v);if(t!==v)m.target.nodeValue=t}else m.addedNodes.forEach(x=>{if(x.nodeType===3){const t=tr(x.nodeValue);if(t!==x.nodeValue)x.nodeValue=t}else if(x.nodeType===1)trNode(x)})}});
+  TROBS.observe(document.body,{childList:true,subtree:true,characterData:true})}}
+function defaultLang(){const l=(navigator.language||'es').toLowerCase();return /^(es|ca|gl|eu)/.test(l)?'es':'en'}
 
 // =================== PRESENTACIÓN ===================
 const $=s=>document.querySelector(s);
-const fmt=n=>Math.round(n).toLocaleString('es-ES');
-const fmtM=m=>(Math.round(m*10)/10).toString().replace('.',',');
+const fmt=n=>Math.round(n).toLocaleString(LANG==='en'?'en-GB':'es-ES');
+const fmtM=m=>{const s=(Math.round(m*10)/10).toString();return LANG==='en'?s:s.replace('.',',')};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-let SET=Object.assign({retry:true,eco:false,music:true,sfx:true,skin:'gemas',avatar:'gato',track:'adrenalina',board:'madera',bg:'carpa',mascot:'clasica',frame:'ninguno'},LS.get('bm_set',{}));
+let SET=Object.assign({lang:defaultLang(),retry:true,eco:false,music:true,sfx:true,skin:'gemas',avatar:'gato',track:'adrenalina',board:'madera',bg:'carpa',mascot:'clasica',frame:'ninguno'},LS.get('bm_set',{}));
 let BEST=Object.assign({run:0,act:0,wins:0,zen:0,tut:false,seenC:[],seenB:[]},LS.get('bm_best',{}));
 let S=null;
 function saveBest(){LS.set('bm_best',BEST)}
@@ -474,7 +590,7 @@ const MKEY={run:'bm_run',zen:'bm_zen',daily:'bm_daily'};
 function saveGame(){if(!S)return;if(S.mode==='daily'&&S.phase==='lost')recordDaily();const k=MKEY[S.mode];if(!k||S.practice)return;if(S.phase==='over'||(S.mode!=='run'&&S.phase==='lost'))LS.del(k);else LS.set(k,S)}
 function pad2(n){return(n<10?'0':'')+n}
 function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())}
-function dayLabel(d){d=d||new Date();try{return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})}catch(e){return dayKey(d)}}
+function dayLabel(d){d=d||new Date();try{return d.toLocaleDateString(LANG==='en'?'en-GB':'es-ES',{day:'numeric',month:'short'})}catch(e){return dayKey(d)}}
 function prevDay(k){const[y,m,d]=k.split('-').map(Number);return dayKey(new Date(y,m-1,d-1))}
 function untilTomorrow(){const n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);const m=Math.max(0,Math.round((t-n)/60000));return Math.floor(m/60)+' h '+pad2(m%60)+' min'}
 function streakNow(){const t=dayKey();return BEST.lastDay===t||BEST.lastDay===prevDay(t)?(BEST.streak||0):0}
@@ -653,7 +769,7 @@ function burst(x,y,col,k){if(SET.eco)k=Math.ceil(k/2);const c=COLORS[col]||'#aaa
  if(V.parts.length>500)V.parts.splice(0,V.parts.length-500)}
 // efecto de imagen: {k,x,y,s0,s1,dur,t0,rot,a, x1,y1}
 function fxImg(k,x,y,s0,s1,dur,opt){kick();V.fx.push(Object.assign({k,x,y,s0,s1,dur,t0:vt,rot:0},opt||{}))}
-function floatText(txt,x,y,col,size,dur){kick();V.floats.push({txt,x,y,col:col||'#fff',size:size||22,t0:vt,dur:dur||900})}
+function floatText(txt,x,y,col,size,dur){kick();txt=tr(txt);V.floats.push({txt,x,y,col:col||'#fff',size:size||22,t0:vt,dur:dur||900})}
 function ease(k){return 1-Math.pow(1-k,3)}
 function backOut(k){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2)}
 let last=0,vt=0,RUN=false,IDLE=0,lastFrame=0;
@@ -886,7 +1002,7 @@ function MENU_DECO(){
  <img class="mas" src="${AS[mascotImg()]}" alt=""></div>`}
 function showMenu(){S=null;document.body.classList.add('inmenu');V.drag=null;V.target=null;hideTut();document.body.classList.remove('zen');
  const run=LS.get('bm_run',null),zen=LS.get('bm_zen',null);
- show(`<button class="who" data-a="avatar">${avHTML(46)}<span>Cambiar<br>avatar</span></button>
+ show(`<button class="who" data-a="avatar">${avHTML(46)}<span>${LANG==='en'?'Change<br>avatar':'Cambiar<br>avatar'}</span></button>
  <div class="logo"><img src="${AS.logo}" alt="Bloque Maldito"></div><div class="mspace"></div>
  ${run?`<button class="btn primary" data-a="cont">Continuar run<small>${stageOf(run,run.ri)} · ${fmt(run.total)} pts</small></button>`:''}
  <button class="btn ${run?'':'primary'}" data-a="newrun">Nueva run</button>
@@ -938,7 +1054,7 @@ A.board=v=>{SET.board=v;saveSet();loadBoard(BOARDS[v]).then(()=>{layout();SFX.ca
 A.setbg=v=>{SET.bg=v;saveSet();applyBg();SFX.card();A.settings()};
 A.mascot=()=>show(`${backBtn()}<h2>Disfraz de la mascota</h2><div class="avs mas">${MASCOTS.map(m=>`<button class="${SET.mascot===m?'on':''}" data-a="setmas" data-v="${m}">${img(m==='clasica'?'mascota_feliz':'ms_'+m)}</button>`).join('')}</div><button class="btn primary" data-a="settings">Listo</button>`,'top');
 A.setmas=v=>{SET.mascot=v;saveSet();SFX.card();A.mascot()};
-A.settings=()=>show(`${backBtn()}<h2>Ajustes</h2><button class="btn small" data-a="togretry">Al perder: ${SET.retry?'Repetir la ronda':'Empezar de cero'}<small>${SET.retry?'Vuelves al inicio de la ronda perdida':'Modo clásico: la run termina'}</small></button>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
+A.settings=()=>show(`${backBtn()}<h2>Ajustes</h2><div class="langrow"><button class="btn small ${LANG==='es'?'primary':''}" data-a="lang" data-v="es">🇪🇸 Español</button><button class="btn small ${LANG==='en'?'primary':''}" data-a="lang" data-v="en">🇬🇧 English</button></div><button class="btn small" data-a="togretry">Al perder: ${SET.retry?'Repetir la ronda':'Empezar de cero'}<small>${SET.retry?'Vuelves al inicio de la ronda perdida':'Modo clásico: la run termina'}</small></button>${togHTML()}${tracksHTML()}${skinsHTML()}${boardsHTML()}${bgsHTML()}<button class="btn small" data-a="mascot">${bi(mascotImg(),'Disfraz de la mascota')}</button><button class="btn small" data-a="avatar">${bi('av_'+SET.avatar,'Avatar')}</button><button class="btn small" data-a="wipe">Borrar récords y partidas</button><button class="btn primary" data-a="${S?'resume':'menu'}">Volver</button>`,'top');
 A.togeco=()=>{SET.eco=!SET.eco;saveSet();applyEco();layout();S&&!ov.classList.contains('on')?0:(S?showPause():A.settings())};
 function applyEco(){document.body.classList.toggle('eco',!!SET.eco)}
 A.togmusic=()=>{SET.music=!SET.music;saveSet();applyVol();S?showPause():A.settings()};
@@ -1017,7 +1133,7 @@ function showShop(){const sh=S.shop,full=S.curses.length>=S.maxCurses;
   <button class="btn small" data-a="skippack">No quiero ninguna</button>`,'top');return}
  const nri=S.ri+1;let nxt;if(nri===9&&!S.endless)nxt='Después: ¡el final de la run!';else{const tg=targetFor(nri);nxt=`Siguiente: ${stageOf(S,nri)} · objetivo ${fmt(tg)}`+(isBoss(nri)&&nri<9?` · Jefe: <b style="color:#ff8090">${bossName(S.bosses[Math.floor(nri/3)])}</b>`:'')}
  const fl=flipNext;flipNext=false;
- show(`<div class="sign"><h2>Tienda<br>maldita</h2></div><div class="goldv" style="font-size:24px"><i class="coin" style="width:26px;height:26px"></i>${S.gold}</div>
+ show(`<div class="sign"><h2>${LANG==='en'?'Cursed<br>Shop':'Tienda<br>maldita'}</h2></div><div class="goldv" style="font-size:24px"><i class="coin" style="width:26px;height:26px"></i>${S.gold}</div>
  <div class="sec">Maldiciones <small>${S.curses.length}/${S.maxCurses} huecos</small></div>
  <div class="cards ${fl?'flipin':''}">${sh.curses.map((o,i)=>o?shopCard(o,i,full):'').join('')}</div>
  <button class="btn small rerollb" data-a="reroll" ${S.gold<sh.rerollCost?'disabled':''} style="max-width:380px">${bi('i_rerroll',`Cambiar Maldiciones · ${sh.rerollCost} oro`)}</button>
@@ -1063,7 +1179,7 @@ function runOver(force){
  <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="newrun2">Nueva run</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 function rushOver(){S.phase='lost';if(!S.done){S.done=1;S.newRec=S.score>(BEST.rush||0);if(S.newRec)BEST.rush=S.score;saveBest()}
  show(`${hero(S.newRec?'ms_prisa':'mascota_triste')}<h2>${S.lostWhy==='time'?'¡Se acabó el tiempo!':'¡Sin hueco!'}</h2>${S.newRec?`<div class="bosslabel" style="color:#ffd35a">${img('i_estrella','width:18px;vertical-align:-3px')} Nuevo récord ${img('i_estrella','width:18px;vertical-align:-3px')}</div>`:''}
- <div class="panel"><div class="line"><span>Puntos</span><b style="color:#fff">${fmt(S.score)}</b></div><div class="line"><span>Récord Contrarreloj</span><b>${fmt(BEST.rush)}</b></div><div class="line"><span>Líneas borradas</span><b>${S.stats.lines||0}</b></div><div class="line"><span>Mejor jugada</span><b>${fmt(S.stats.bestPlay)}</b></div></div>
+ <div class="panel"><div class="line"><span>Puntos</span><b style="color:#fff">${fmt(S.score)}</b></div><div class="line"><span>Récord Contrarreloj</span><b>${fmt(BEST.rush)}</b></div><div class="line"><span>Líneas borradas</span><b>${S.stats.lines||0}</b></div><div class="line"><span>Mejor jugada</span><b>${fmt(S.stats.bestPlay||0)}</b></div></div>
  <button class="btn" data-a="share">Compartir puntuación</button><button class="btn primary" data-a="rush">Otra vez</button><button class="btn small" data-a="menu2">Menú</button>`);BACK=showMenu}
 function recordDaily(){if(!S||S.mode!=='daily'||S.practice||S.done)return;S.done=1;const t=S.day;BEST.daily=BEST.daily||{};if(BEST.daily[t]==null){BEST.daily[t]=S.score;
    BEST.streak=BEST.lastDay===prevDay(t)?(BEST.streak||0)+1:BEST.lastDay===t?(BEST.streak||1):1;BEST.lastDay=t;BEST.bestStreak=Math.max(BEST.bestStreak||0,BEST.streak);
@@ -1087,10 +1203,11 @@ function showRetry(){const why=S.lostWhy==='pieces'?'Te quedaste sin piezas':'No
  <button class="btn small" data-a="menu" style="max-width:220px">Salir al menú</button>`);BACK=showMenu}
 A.retry=()=>{retryRound(S);saveGame();SFX.card();enterGame()};
 A.endrun=()=>runOver(true);
+A.lang=v=>{SET.lang=v;saveSet();setLang(v);SFX.click();A.settings()};
 A.togretry=()=>{SET.retry=!SET.retry;saveSet();SFX.click();A.settings()};
 A.zenagain=()=>{LS.del('bm_zen');S=newZen((Math.random()*2147483647)|0);saveGame();enterGame()};
 A.menu2=()=>showMenu();
-A.share=()=>{const t=S.mode==='rush'?`⏱ Bloque Maldito · Contrarreloj: ${fmt(S.score)} puntos en una partida. ¿Me superas?`:S.mode==='daily'?`📅 Bloque Maldito · Reto Diario ${S.dayLabel}: ${fmt(S.score)} puntos (${dailyRank(S.score,S.ghosts||[])}º de 8) 🔥${streakNow()}. ¿Me superas con las mismas piezas?`:S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos, llegué a ${stageOf(S,Math.min(S.ri,8))}. Mejor jugada: ${fmt(S.stats.bestPlay)}. ¿Me superas?`:`🟪 Bloque Maldito (Zen): ${fmt(S.score)} puntos. ¿Me superas?`;
+A.share=()=>{const t=tr(S.mode==='rush'?`⏱ Bloque Maldito · Contrarreloj: ${fmt(S.score)} puntos en una partida. ¿Me superas?`:S.mode==='daily'?`📅 Bloque Maldito · Reto Diario ${S.dayLabel}: ${fmt(S.score)} puntos (${dailyRank(S.score,S.ghosts||[])}º de 8) 🔥${streakNow()}. ¿Me superas con las mismas piezas?`:S.mode==='run'?`🟪 Bloque Maldito: ${fmt(S.total)} puntos, llegué a ${stageOf(S,Math.min(S.ri,8))}. Mejor jugada: ${fmt(S.stats.bestPlay)}. ¿Me superas?`:`🟪 Bloque Maldito (Zen): ${fmt(S.score)} puntos. ¿Me superas?`);
  const copy=()=>{try{navigator.clipboard.writeText(t).then(()=>toast('Copiado: pégalo donde quieras'),()=>toast(t))}catch(e){toast(t)}};
  try{if(navigator.share){navigator.share({text:t}).catch(e=>{if(!e||e.name!=='AbortError')copy()});return}}catch(e){}
  copy()};
@@ -1098,6 +1215,7 @@ A.share=()=>{const t=S.mode==='rush'?`⏱ Bloque Maldito · Contrarreloj: ${fmt(
 // ---------- Arranque ----------
 $('#pimg').src=AS.i_reloj;applyEco();applyBg();
 (function(){try{[['icon','image/png'],['apple-touch-icon','image/png']].forEach(([r,t])=>{const l=document.createElement('link');l.rel=r;l.type=t;l.href=AS.icono;document.head.appendChild(l)})}catch(e){}})();
+setLang(SET.lang);
 loadImages().then(()=>{layout();showMenu();kick()});
 </script>
 </body>
